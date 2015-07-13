@@ -189,7 +189,8 @@ void main(){\n\
 
 			// set the mouse uniform
 			let rect = this.canvas.getBoundingClientRect();
-			if (mouse.x >= rect.left && 
+			if (mouse &&
+				mouse.x >= rect.left && 
 				mouse.x <= rect.right && 
 				mouse.y >= rect.top &&
 				mouse.y <= rect.bottom) {
