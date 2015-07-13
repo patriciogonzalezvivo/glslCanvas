@@ -1,0 +1,5 @@
+.DS_Store
+.dropbox
+*Icon*
+
+node_modules/*

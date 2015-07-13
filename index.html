@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>GLSL Shader Viewer</title>
+
+		<!-- GlslCanvas -->
+		<script type="text/javascript" src="build/GlslCanvas.js" ></script>
+		<style>
+		#canvas{
+		    position: absolute;
+		    top: 50%;
+		    left: 50%;
+		    margin-top: -250px;
+		    margin-left: -250px;
+		}​		
+		</style>
+
+	</head>
+	<body>
+		<canvas id="canvas" data-fragment-url="iching.frag" width="500" height="500"></canvas>
+		<script type="text/javascript">
+		// Keep track of the mouse
+		var mouse = {x: 0, y: 0};
+		document.addEventListener('mousemove', function(e){ 
+		    mouse.x = e.clientX || e.pageX; 
+		    mouse.y = e.clientY || e.pageY 
+		}, false);
+
+		/**
+		 * Provides requestAnimationFrame in a cross browser way.
+		 */
+		window.requestAnimFrame = (function() {
+			return	window.requestAnimationFrame ||
+			    	window.webkitRequestAnimationFrame ||
+			    	window.mozRequestAnimationFrame ||
+			    	window.oRequestAnimationFrame ||
+			    	window.msRequestAnimationFrame ||
+			    	function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+			        	return window.setTimeout(callback, 1000/60);
+			     };
+		})();
+
+		/**
+		 * Provides cancelRequestAnimationFrame in a cross browser way.
+		 */
+		window.cancelRequestAnimFrame = (function() {
+		 	return	window.cancelCancelRequestAnimationFrame ||
+		        	window.webkitCancelRequestAnimationFrame ||
+		        	window.mozCancelRequestAnimationFrame ||
+		        	window.oCancelRequestAnimationFrame ||
+		        	window.msCancelRequestAnimationFrame ||
+		        	window.clearTimeout;
+		})();
+
+		var billboards = []; 
+		function load_all_GlslCanvas() {
+			var list = document.getElementsByTagName("canvas");
+
+			// Load shaders on canvas
+			for(var i = 0; i < list.length; i++){
+				var sandbox = new GlslCanvas(list[i]);
+				if (sandbox.isValid) {
+					billboards.push(sandbox);
+				}
+			}
+		}
+
+		function render_all_GlslCanvas(){
+			for(var i = 0; i < billboards.length; i++){
+				billboards[i].render( { mouse: mouse } );
+			}
+			window.requestAnimFrame(render_all_GlslCanvas);
+		}
+
+		window.onload = function () { 
+			load_all_GlslCanvas();
+			render_all_GlslCanvas(); 
+		};
+		</script>
+	</body>
+</html>
