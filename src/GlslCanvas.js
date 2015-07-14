@@ -221,7 +221,7 @@ void main(){\n\
 
 	render({ forceRender, mouse }) {
 
-		if (forceRender || (this.animated && isCanvasVisible(this.canvas))) {
+		if ( (forceRender !== undefined && forceRender) || (this.animated && isCanvasVisible(this.canvas))) {
 
 			// set the time uniform
 			let timeFrame = Date.now();
@@ -259,12 +259,12 @@ void main(){\n\
 
 			// Draw the rectangle.
 			this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-			// console.log("Render " + time);
+			console.log("Render " + time);
 		}
 	}
 
 	start() {
-		this.render( { mouse: mouse } );
+		this.render({ mouse: mouse });
 		window.requestAnimFrame(this.start());
 	}
 
