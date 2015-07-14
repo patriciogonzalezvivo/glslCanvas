@@ -28,10 +28,6 @@ gulp.task('js', function () {
             .pipe(concat('GlslCanvas.min.js'))
             .pipe(uglify())
         .pipe(sourcemaps.write('.'))
-        // //     Add transformation tasks to the pipeline here.
-            // .pipe(uglify())
-            // .on('error', gutil.log)
-        // .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('./build'));
 });
 

@@ -24,6 +24,44 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import { fetchHTTP, isCanvasVisible } from "./tools"
 import { setupWebGL, createShader, createProgram, loadTexture } from "./gl"
 
+/**
+ * Provides requestAnimationFrame in a cross browser way.
+ */
+window.requestAnimFrame = (function() {
+	return	window.requestAnimationFrame ||
+	    	window.webkitRequestAnimationFrame ||
+	    	window.mozRequestAnimationFrame ||
+	    	window.oRequestAnimationFrame ||
+	    	window.msRequestAnimationFrame ||
+	    	function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+	        	return window.setTimeout(callback, 1000/60);
+	     };
+})();
+
+/**
+ * Provides cancelRequestAnimationFrame in a cross browser way.
+ */
+window.cancelRequestAnimFrame = (function() {
+ 	return	window.cancelCancelRequestAnimationFrame ||
+        	window.webkitCancelRequestAnimationFrame ||
+        	window.mozCancelRequestAnimationFrame ||
+        	window.oCancelRequestAnimationFrame ||
+        	window.msCancelRequestAnimationFrame ||
+        	window.clearTimeout;
+})();
+
+/**
+ * 	Keep track of the mouse
+ */
+var mouse = {x: 0, y: 0};
+document.addEventListener('mousemove', function(e){ 
+    mouse.x = e.clientX || e.pageX; 
+    mouse.y = e.clientY || e.pageY 
+}, false);
+
+/**
+ * 	GLSL CANVAS
+ */
 export default class GlslCanvas {
 	constructor(canvas) {
 
@@ -219,6 +257,11 @@ void main(){\n\
 			this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
 			// console.log("Render " + time);
 		}
+	}
+
+	start() {
+		this.render( { mouse: mouse } );
+		window.requestAnimFrame(this.start());
 	}
 
 	version() {
