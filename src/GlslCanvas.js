@@ -38,17 +38,17 @@ window.requestAnimFrame = (function() {
 	     };
 })();
 
-/**
- * Provides cancelRequestAnimationFrame in a cross browser way.
- */
-window.cancelRequestAnimFrame = (function() {
- 	return	window.cancelCancelRequestAnimationFrame ||
-        	window.webkitCancelRequestAnimationFrame ||
-        	window.mozCancelRequestAnimationFrame ||
-        	window.oCancelRequestAnimationFrame ||
-        	window.msCancelRequestAnimationFrame ||
-        	window.clearTimeout;
-})();
+// /**
+//  * Provides cancelRequestAnimationFrame in a cross browser way.
+//  */
+// window.cancelRequestAnimFrame = (function() {
+//  	return	window.cancelCancelRequestAnimationFrame ||
+//         	window.webkitCancelRequestAnimationFrame ||
+//         	window.mozCancelRequestAnimationFrame ||
+//         	window.oCancelRequestAnimationFrame ||
+//         	window.msCancelRequestAnimationFrame ||
+//         	window.clearTimeout;
+// })();
 
 /**
  * 	Keep track of the mouse
@@ -215,11 +215,11 @@ void main(){\n\
 		this.program = program;
 
 		if (this.vbo){
-			this.render( { mouse: {x: 0, y: 0}, forceRender: true });
+			this.render( {x: 0, y: 0}, true );
 		}
 	}
 
-	render({ forceRender, mouse }) {
+	render( mouse, forceRender ) {
 
 		if ( (forceRender !== undefined && forceRender) || (this.animated && isCanvasVisible(this.canvas))) {
 
@@ -264,7 +264,7 @@ void main(){\n\
 	}
 
 	start() {
-		this.render({ mouse: mouse });
+		this.render(mouse);
 		window.requestAnimFrame(this.start());
 	}
 
