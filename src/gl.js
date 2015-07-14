@@ -1,3 +1,5 @@
+import { isPowerOf2 } from "./tools"
+
 var lastError = "";
 
 export function loadTexture(_gl, _texture) {

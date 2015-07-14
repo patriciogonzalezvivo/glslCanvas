@@ -103,12 +103,12 @@ export default class GlslCanvas {
 				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 0, 255])); // red
 
 				this.textures[nImg].image = new Image();
-				this.textures[nImg].image.onload = function(_canvas,_gl,_program,_textures,_tex,render) { 
+				this.textures[nImg].image.onload = function(glsl_canvas, _tex){//_canvas,_gl,_program,_textures,_tex,render) { 
 					return function() {
-						loadTexture(_gl, _tex); 
-						render(_canvas, _gl, _program, _textures)
+						loadTexture(glsl_canvas.gl, _tex); 
+						glsl_canvas.render({forceRender:true});
 					};
-				}(this.canvas,this.gl,this.program, this.textures, this.textures[nImg],this.render);
+				}(this,this.textures[nImg]);//this.canvas,this.gl,this.program, this.textures, this.textures[nImg]);
 	  			this.textures[nImg].image.src = imgList[nImg];
 			}
 		}
