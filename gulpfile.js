@@ -3,7 +3,8 @@
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var livereload = require('gulp-livereload');
-// var sourcemaps = require('gulp-sourcemaps');
+var sourcemaps = require('gulp-sourcemaps');
+var concat = require('gulp-concat');
 
 
 // Build Javascripts
@@ -23,7 +24,10 @@ gulp.task('js', function () {
     return bundle.bundle()
         .pipe(source('GlslCanvas.js'))
         .pipe(buffer())
-        // .pipe(sourcemaps.init({loadMaps: true}))
+        .pipe(sourcemaps.init({loadMaps: true}))
+            .pipe(concat('GlslCanvas.min.js'))
+            .pipe(uglify())
+        .pipe(sourcemaps.write('.'))
         // //     Add transformation tasks to the pipeline here.
             // .pipe(uglify())
             // .on('error', gutil.log)
