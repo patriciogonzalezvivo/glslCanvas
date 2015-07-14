@@ -214,7 +214,7 @@ void main(){\n\
 
 			// Draw the rectangle.
 			this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-			console.log("Render " + time);
+			// console.log("Render " + time);
 		}
 	};
 
