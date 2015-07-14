@@ -109,7 +109,7 @@ export default class GlslCanvas {
 				this.textures[nImg].image.onload = function(glsl_canvas, _tex){//_canvas,_gl,_program,_textures,_tex,render) { 
 					return function() {
 						loadTexture(glsl_canvas.gl, _tex); 
-						glsl_canvas.render({forceRender:true});
+						glsl_canvas.render(true);
 					};
 				}(this,this.textures[nImg]);//this.canvas,this.gl,this.program, this.textures, this.textures[nImg]);
 	  			this.textures[nImg].image.src = imgList[nImg];
