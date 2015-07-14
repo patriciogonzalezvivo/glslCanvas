@@ -25,41 +25,6 @@ import { fetchHTTP, isCanvasVisible } from "./tools"
 import { setupWebGL, createShader, createProgram, loadTexture } from "./gl"
 
 /**
- * Provides requestAnimationFrame in a cross browser way.
- */
-window.requestAnimFrame = (function() {
-	return	window.requestAnimationFrame ||
-	    	window.webkitRequestAnimationFrame ||
-	    	window.mozRequestAnimationFrame ||
-	    	window.oRequestAnimationFrame ||
-	    	window.msRequestAnimationFrame ||
-	    	function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
-	        	return window.setTimeout(callback, 1000/60);
-	     };
-})();
-
-// /**
-//  * Provides cancelRequestAnimationFrame in a cross browser way.
-//  */
-// window.cancelRequestAnimFrame = (function() {
-//  	return	window.cancelCancelRequestAnimationFrame ||
-//         	window.webkitCancelRequestAnimationFrame ||
-//         	window.mozCancelRequestAnimationFrame ||
-//         	window.oCancelRequestAnimationFrame ||
-//         	window.msCancelRequestAnimationFrame ||
-//         	window.clearTimeout;
-// })();
-
-/**
- * 	Keep track of the mouse
- */
-var mouse = {x: 0, y: 0};
-document.addEventListener('mousemove', function(e){ 
-    mouse.x = e.clientX || e.pageX; 
-    mouse.y = e.clientY || e.pageY 
-}, false);
-
-/**
  * 	GLSL CANVAS
  */
 export default class GlslCanvas {
@@ -151,10 +116,11 @@ export default class GlslCanvas {
 			}
 		}
 
-		this.render( { mouse: {x: 0, y: 0}, forceRender: true });
-	}
+		this.setMouse({x: 0, y: 0});
+		this.render(true);
+	};
 
-	load( fragString, vertString ) {
+	load(fragString, vertString) {
 
 		// Load default vertex shader if no one is pass
 		if (!vertString) {
@@ -215,31 +181,20 @@ void main(){\n\
 		this.program = program;
 
 		if (this.vbo){
-			this.render( {x: 0, y: 0}, true );
+			this.render(true);
 		}
-	}
+	};
 
-	render( mouse, forceRender ) {
+	render(forceRender) {
 
-		if ( (forceRender !== undefined && forceRender) || (this.animated && isCanvasVisible(this.canvas))) {
+		if ((forceRender !== undefined && forceRender) || 
+			(this.animated && isCanvasVisible(this.canvas))) {
 
 			// set the time uniform
 			let timeFrame = Date.now();
 			let time = (timeFrame-this.timeLoad) / 1000.0;
 			let timeLocation = this.gl.getUniformLocation(this.program, "u_time");
 			this.gl.uniform1f(timeLocation, time);
-
-			// set the mouse uniform
-			let rect = this.canvas.getBoundingClientRect();
-			if (mouse &&
-				mouse.x >= rect.left && 
-				mouse.x <= rect.right && 
-				mouse.y >= rect.top &&
-				mouse.y <= rect.bottom) {
-
-				let mouseLocation = this.gl.getUniformLocation(this.program, "u_mouse");
-				this.gl.uniform2f(mouseLocation,mouse.x-rect.left,this.canvas.height-(mouse.y-rect.top));
-			}
 
 			// set the resolution uniform
 			let resolutionLocation = this.gl.getUniformLocation(this.program, "u_resolution");
@@ -261,16 +216,25 @@ void main(){\n\
 			this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
 			console.log("Render " + time);
 		}
-	}
+	};
 
-	start() {
-		this.render(mouse);
-		window.requestAnimFrame(this.start());
-	}
+	setMouse(mouse) {
+		// set the mouse uniform
+		let rect = this.canvas.getBoundingClientRect();
+		if (mouse &&
+			mouse.x >= rect.left && 
+			mouse.x <= rect.right && 
+			mouse.y >= rect.top &&
+			mouse.y <= rect.bottom) {
+
+			this.gl.uniform2f(	this.gl.getUniformLocation(this.program, "u_mouse"),
+								mouse.x-rect.left,this.canvas.height-(mouse.y-rect.top));
+		}
+	};
 
 	version() {
 		return "0.0.1";
-	}
+	};
 };
 
 window.GlslCanvas = GlslCanvas;

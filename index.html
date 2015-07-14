@@ -5,7 +5,7 @@
 		<title>GLSL Shader Viewer</title>
 
 		<!-- GlslCanvas -->
-		<script type="text/javascript" src="build/GlslCanvas.js" ></script>
+		<script type="text/javascript" src="build/GlslCanvas.min.js" ></script>
 		<style>
 		#canvas{
 		    position: absolute;
@@ -41,18 +41,6 @@
 			     };
 		})();
 
-		/**
-		 * Provides cancelRequestAnimationFrame in a cross browser way.
-		 */
-		window.cancelRequestAnimFrame = (function() {
-		 	return	window.cancelCancelRequestAnimationFrame ||
-		        	window.webkitCancelRequestAnimationFrame ||
-		        	window.mozCancelRequestAnimationFrame ||
-		        	window.oCancelRequestAnimationFrame ||
-		        	window.msCancelRequestAnimationFrame ||
-		        	window.clearTimeout;
-		})();
-
 		var billboards = []; 
 		function load_all_GlslCanvas() {
 			var list = document.getElementsByTagName("canvas");
@@ -61,6 +49,7 @@
 			for(var i = 0; i < list.length; i++){
 				var sandbox = new GlslCanvas(list[i]);
 				if (sandbox.isValid) {
+					sandbox.begin();
 					billboards.push(sandbox);
 				}
 			}
@@ -68,7 +57,8 @@
 
 		function render_all_GlslCanvas(){
 			for(var i = 0; i < billboards.length; i++){
-				billboards[i].render( { mouse: mouse } );
+				billboards[i].setMouse(mouse);
+				billboards[i].render();
 			}
 			window.requestAnimFrame(render_all_GlslCanvas);
 		}
