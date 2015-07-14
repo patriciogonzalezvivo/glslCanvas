@@ -49,7 +49,6 @@
 			for(var i = 0; i < list.length; i++){
 				var sandbox = new GlslCanvas(list[i]);
 				if (sandbox.isValid) {
-					sandbox.begin();
 					billboards.push(sandbox);
 				}
 			}
