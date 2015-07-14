@@ -173,8 +173,8 @@ void main(){\n\
 		this.gl.useProgram(program);
 
 		// Delete shaders
-		this.gl.detachShader(program, vertexShader);
-		this.gl.detachShader(program, fragmentShader);
+		// this.gl.detachShader(program, vertexShader);
+		// this.gl.detachShader(program, fragmentShader);
 		this.gl.deleteShader(vertexShader);
 		this.gl.deleteShader(fragmentShader);
 
