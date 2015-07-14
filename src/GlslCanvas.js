@@ -213,6 +213,10 @@ void main(){\n\
 		this.gl.deleteShader(fragmentShader);
 
 		this.program = program;
+
+		if (this.vbo){
+			this.render( { mouse: {x: 0, y: 0}, forceRender: true });
+		}
 	}
 
 	render({ forceRender, mouse }) {
