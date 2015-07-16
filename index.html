@@ -62,7 +62,7 @@
 			for(var i = 0; i < list.length; i++){
 				var sandbox = new GlslCanvas(list[i]);
 				if (sandbox.isValid) {
-					sandbox.setTexture("u_logo","data/logo.jpg");
+					sandbox.setUniform("u_logo","data/logo.jpg");
 					billboards.push(sandbox);
 				}
 			}

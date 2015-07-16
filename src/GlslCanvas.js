@@ -55,7 +55,7 @@ export default class GlslCanvas {
 		this.load(fragContent);
 
 		if (!this.program){
-			return
+			return;
 		}
 
 		// Construct VBO
@@ -93,18 +93,35 @@ export default class GlslCanvas {
 		}
 		
 		// load TEXTURES
-		this.textures = [];
+		this.textures = {};
 		let bLoadTextures = canvas.hasAttribute('data-textures');
 		if (bLoadTextures) {
 			let imgList = canvas.getAttribute('data-textures').split(',');
 			for (let nImg in imgList) {
-				this.setTexture("u_tex"+nImg,imgList[nImg]);
+				this.loadTexture("u_tex"+nImg,imgList[nImg]);
 			}
 		}
 
 		this.setMouse({x: 0, y: 0});
 		this.render(true);
 	};
+
+	destroy() {
+		this.animated = false;
+		this.isValid = false;
+
+		for (let tex in this.textures) {
+			this.gl.deleteTexture(tex);
+		}
+		this.textures = {};
+
+        this.gl.useProgram(null);
+        this.gl.deleteProgram(this.program);
+        this.program = null;
+        this.gl.deleteBuffer(this.vbo );
+        this.vbo = null;
+        
+    }
 
 	load(fragString, vertString) {
 
@@ -171,58 +188,7 @@ void main(){\n\
 		}
 	};
 
-	render(forceRender) {
-
-		if ((forceRender !== undefined && forceRender) || 
-			(this.animated && isCanvasVisible(this.canvas))) {
-
-			// set the time uniform
-			let timeFrame = Date.now();
-			let time = (timeFrame-this.timeLoad) / 1000.0;
-			let timeLocation = this.gl.getUniformLocation(this.program, "u_time");
-			this.gl.uniform1f(timeLocation, time);
-
-			// set the resolution uniform
-			let resolutionLocation = this.gl.getUniformLocation(this.program, "u_resolution");
-			this.gl.uniform2f(resolutionLocation, this.canvas.width, this.canvas.height);
-
-			for (let i = 0; i < this.textures.length; ++i){
-
-				this.gl.uniform1i( this.gl.getUniformLocation( this.program, this.textures[i].name), i);
-				this.gl.uniform2f( this.gl.getUniformLocation( this.program, this.textures[i].name+"Resolution"), 
-										 this.textures[i].image.width,
-										 this.textures[i].image.height);
-
-				this.gl.activeTexture(this.gl.TEXTURE0+i);
-				this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[i]);
-				
-			}
-
-			// Draw the rectangle.
-			this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-			// console.log("Render " + time);
-		}
-	};
-
-	setMouse(mouse) {
-		// set the mouse uniform
-		let rect = this.canvas.getBoundingClientRect();
-		if (mouse &&
-			mouse.x >= rect.left && 
-			mouse.x <= rect.right && 
-			mouse.y >= rect.top &&
-			mouse.y <= rect.bottom) {
-
-			this.gl.uniform2f(	this.gl.getUniformLocation(this.program, "u_mouse"),
-								mouse.x-rect.left,this.canvas.height-(mouse.y-rect.top));
-		}
-	};
-
-	setUniform(name,value) {
-
-	}
-
-	setTexture(name,url) {
+	loadTexture(name,url) {
 		let tex = this.gl.createTexture();
 
 		this.gl.bindTexture(this.gl.TEXTURE_2D, tex);
@@ -236,10 +202,96 @@ void main(){\n\
 			};
 		}(this,tex);
 		tex.name = name;
+		tex.url = url;
 		tex.image.src = url;
 
-		this.textures.push(tex);
-	}
+		this.textures[name] = tex;
+	};
+
+	setMouse(mouse) {
+		// set the mouse uniform
+		let rect = this.canvas.getBoundingClientRect();
+		if (mouse && mouse.x && mouse.y &&
+			mouse.x >= rect.left && 
+			mouse.x <= rect.right && 
+			mouse.y >= rect.top &&
+			mouse.y <= rect.bottom) {
+
+			this.setUniform("u_mouse", [ mouse.x-rect.left, this.canvas.height-(mouse.y-rect.top) ]); 
+		}
+	};
+
+	setUniform(name,value) {
+		let location = this.gl.getUniformLocation(this.program, name);
+		if (typeof value === "number") {
+			// console.log("1f " + name + " " + value);
+			this.gl.uniform1f(location, value);
+		} else if (typeof value === "string") {
+			if (this.textures[name]===undefined) {
+				this.loadTexture(name,value);
+			} else {
+				this.gl.uniform1i(	this.gl.getUniformLocation(this.program, name), 
+									this.texureIndex);
+
+				this.gl.activeTexture(this.gl.TEXTURE0+this.texureIndex);
+				this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[name]);
+
+				this.setUniform(name+"Resolution", [this.textures[name].image.width, 
+													this.textures[name].image.height]);
+
+				this.texureIndex++;
+			}
+		} else if (Array.isArray(value)) {
+			switch (value.length) {
+				case 1:
+					// console.log("1f " + name + " " + value[0]);
+					this.gl.uniform1f(location, value[0]);
+			    	break;
+			    case 2:
+			    	// console.log("2f " + name + " " + value[0] + ", " + value[1]);
+					this.gl.uniform2f(location, value[0], value[1]);
+			    	break;
+			    case 3:
+			    	// console.log("3f " + name + " " + value[0] + ", " + value[1] + ", " + value[2]);
+					this.gl.uniform3f(location, value[0], value[1], value[2]);
+			    	break;
+			    case 4:
+			    	// console.log("4f " + name + " " + value[0] + ", " + value[1] + ", " + value[2] + ", " + value[3]);
+					this.gl.uniform4f(location, value[0], value[1], value[2], value[3]);
+			    	break;
+				default:
+			        return;
+			};
+		} else if (typeof value === "object"){
+			for (let prop in value){
+				this.setUniform(name+"."+prop,value.prop);
+			}
+		}
+	};
+
+	render(forceRender) {
+
+		if ((forceRender !== undefined && forceRender) || 
+			(this.animated && isCanvasVisible(this.canvas))) {
+
+			// set the time uniform
+			let timeFrame = Date.now();
+			let time = (timeFrame-this.timeLoad) / 1000.0;
+			this.setUniform("u_time",time);
+
+			// set the resolution uniform
+			this.setUniform("u_resolution", [this.canvas.width, this.canvas.height] );
+
+			this.texureIndex = 0;
+			for (let tex in this.textures) {
+				this.setUniform(tex, this.textures[tex].url);
+			}
+
+			// Draw the rectangle.
+			this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+			// console.log("Render " + time);
+		}
+	};
 
 	version() {
 		return "0.0.1";
