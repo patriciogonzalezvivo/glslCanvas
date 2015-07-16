@@ -98,21 +98,7 @@ export default class GlslCanvas {
 		if (bLoadTextures) {
 			let imgList = canvas.getAttribute('data-textures').split(',');
 			for (let nImg in imgList) {
-				console.log("Loading texture: " + imgList[nImg]);
-
-				this.textures.push(gl.createTexture());
-
-				gl.bindTexture(gl.TEXTURE_2D, this.textures[nImg]);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 0, 255])); // red
-
-				this.textures[nImg].image = new Image();
-				this.textures[nImg].image.onload = function(glsl_canvas, _tex){//_canvas,_gl,_program,_textures,_tex,render) { 
-					return function() {
-						loadTexture(glsl_canvas.gl, _tex); 
-						glsl_canvas.render(true);
-					};
-				}(this,this.textures[nImg]);//this.canvas,this.gl,this.program, this.textures, this.textures[nImg]);
-	  			this.textures[nImg].image.src = imgList[nImg];
+				this.setTexture("u_tex"+nImg,imgList[nImg]);
 			}
 		}
 
@@ -202,8 +188,8 @@ void main(){\n\
 
 			for (let i = 0; i < this.textures.length; ++i){
 
-				this.gl.uniform1i( this.gl.getUniformLocation( this.program, "u_tex"+i), i);
-				this.gl.uniform2f( this.gl.getUniformLocation( this.program, "u_tex"+i+"Resolution"), 
+				this.gl.uniform1i( this.gl.getUniformLocation( this.program, this.textures[i].name), i);
+				this.gl.uniform2f( this.gl.getUniformLocation( this.program, this.textures[i].name+"Resolution"), 
 										 this.textures[i].image.width,
 										 this.textures[i].image.height);
 
@@ -231,6 +217,29 @@ void main(){\n\
 								mouse.x-rect.left,this.canvas.height-(mouse.y-rect.top));
 		}
 	};
+
+	setUniform(name,value) {
+
+	}
+
+	setTexture(name,url) {
+		let tex = this.gl.createTexture();
+
+		this.gl.bindTexture(this.gl.TEXTURE_2D, tex);
+		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 0, 255])); // red
+
+		tex.image = new Image();
+		tex.image.onload = function(glsl_canvas, _tex){
+			return function() {
+				loadTexture(glsl_canvas.gl, _tex); 
+				glsl_canvas.render(true);
+			};
+		}(this,tex);
+		tex.name = name;
+		tex.image.src = url;
+
+		this.textures.push(tex);
+	}
 
 	version() {
 		return "0.0.1";

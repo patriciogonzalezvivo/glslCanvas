@@ -2,23 +2,36 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<title>GLSL Shader Viewer</title>
+		<title>GlslCanvas</title>
 
-		<!-- GlslCanvas -->
-		<script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/build/GlslCanvas.min.js"></script>
+		<script type="text/javascript" src="/build/GlslCanvas.min.js"></script>
+
 		<style>
-		#canvas{
-		    position: absolute;
-		    top: 50%;
-		    left: 50%;
-		    margin-top: -250px;
-		    margin-left: -250px;
-		}​		
+			body {
+				background: #101515;
+			}
+
+			#canvas {
+			    position: absolute;
+			    top: 50%;
+			    left: 50%;
+			    margin-top: -250px;
+			    margin-left: -250px;
+			}​
+
 		</style>
 
 	</head>
 	<body>
-		<canvas id="canvas" data-fragment-url="iching.frag" width="500" height="500"></canvas>
+		<a href="http://patriciogonzalezvivo.com"><canvas id="canvas" data-fragment-url="data/moon.frag" data-textures="data/moon.jpg" width="500" height="500"></canvas></a>
+
+		<a href="https://github.com/patriciogonzalezvivo/glslCanvas">
+			<div class="title" style="color: white; position: absolute; top: 75%; left: 50%; margin-left: -150px; font-family: Baskerville, serif; font-size: 80px; font-style: italic; text-decoration: none; line-height: 0.0;">
+				<p>glslCanvas</p>
+				<p style="font-size: 27px; font-style: normal;">by Patricio Gonzalez Vivo</p>
+			</div>
+		</a>
+
 		<script type="text/javascript">
 		// Keep track of the mouse
 		var mouse = {x: 0, y: 0};
@@ -49,6 +62,7 @@
 			for(var i = 0; i < list.length; i++){
 				var sandbox = new GlslCanvas(list[i]);
 				if (sandbox.isValid) {
+					sandbox.setTexture("u_logo","data/logo.jpg");
 					billboards.push(sandbox);
 				}
 			}
