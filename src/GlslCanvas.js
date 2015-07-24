@@ -223,9 +223,9 @@ void main(){\n\
         	uniform.type = type;
         	uniform.method = 'uniform' + method;
         	// console.log(uniform.method,uniform.name,uniform.value);
-        	if (this.change || uniform.location === undefined) {
+        	// if (this.change || uniform.location === undefined) {
             	uniform.location = this.gl.getUniformLocation(this.program, name);
-        	}
+        	// }
         	this.gl[uniform.method].apply(this.gl, [uniform.location].concat(uniform.value));
         }
     }
@@ -234,7 +234,6 @@ void main(){\n\
 		if (this.textures[name]===undefined) {
 			this.loadTexture(name,url);
 		} else {
-			// this.gl.uniform1i( this.gl.getUniformLocation(this.program, name), this.texureIndex);
 			this.uniform("1i", "sampler2D", name, this.texureIndex);
 			this.gl.activeTexture(this.gl.TEXTURE0+this.texureIndex);
 			this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[name]);
