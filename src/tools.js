@@ -47,3 +47,10 @@ export function getMousePos(_canvas, _evt) {
 		y: _evt.clientY - rect.top
 	};
 }
+
+export function isDiff(a, b) {
+	if (a && b) {
+		return a.toString() !== b.toString();
+	}
+    return false;
+}

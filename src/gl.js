@@ -147,7 +147,7 @@ export function createProgram(gl, shaders, opt_attribs, opt_locations) {
 	gl.linkProgram(program);
 
 	// Check the link status
-	var linked = gl.getProgramParameter(program, gl.LINK_STATUS);
+	let linked = gl.getProgramParameter(program, gl.LINK_STATUS);
 	if (!linked) {
 		// something went wrong with the link
 		lastError = gl.getProgramInfoLog (program);
@@ -157,4 +157,122 @@ export function createProgram(gl, shaders, opt_attribs, opt_locations) {
 		return null;
 	}
 	return program;
+};
+
+
+// By Brett Camber on
+// https://github.com/tangrams/tangram/blob/master/src/gl/glsl.js
+export function parseUniforms(uniforms, prefix = null) {
+    var parsed = [];
+
+    for (var name in uniforms) {
+        var uniform = uniforms[name];
+        var u;
+
+        if (prefix) {
+            name = prefix + '.' + name;
+        }
+
+        // Single float
+        if (typeof uniform === 'number') {
+            parsed.push({
+                type: 'float',
+                method: '1f',
+                name, value:
+                uniform
+            });
+        }
+        // Array: vector, array of floats, array of textures, or array of structs
+        else if (Array.isArray(uniform)) {
+            // Numeric values
+            if (typeof uniform[0] === 'number') {
+                // float vectors (vec2, vec3, vec4)
+                if (uniform.length >= 2 && uniform.length <= 4) {
+                    parsed.push({
+                        type: 'vec' + uniform.length,
+                        method: uniform.length + 'fv',
+                        name,
+                        value: uniform
+                    });
+                }
+                // float array
+                else if (uniform.length > 4) {
+                    parsed.push({
+                        type: 'float[]',
+                        method: '1fv',
+                        name: name + '[0]',
+                        value: uniform
+                    });
+                }
+                // TODO: assume matrix for (typeof == Float32Array && length == 16)?
+            }
+            // Array of textures
+            else if (typeof uniform[0] === 'string') {
+                parsed.push({
+                    type: 'sampler2D',
+                    method: '1i',
+                    name: name,
+                    value: uniform
+                });
+                // for (u=0; u < uniform.length; u++) {
+                //     parsed.push({
+                //         type: 'sampler2D',
+                //         method: '1i',
+                //         name: name + '[' + u + ']',
+                //         value: uniform[u]
+                //     });
+                // }
+            }
+            // Array of arrays - but only arrays of vectors are allowed in this case
+            else if (Array.isArray(uniform[0]) && typeof uniform[0][0] === 'number') {
+                // float vectors (vec2, vec3, vec4)
+                if (uniform[0].length >= 2 && uniform[0].length <= 4) {
+                    // Set each vector in the array
+                    for (u=0; u < uniform.length; u++) {
+                        parsed.push({
+                            type: 'vec' + uniform[0].length,
+                            method: uniform[u].length + 'fv',
+                            name: name + '[' + u + ']',
+                            value: uniform[u]
+                        });
+                    }
+                }
+                // else error?
+            }
+            // Array of structures
+            else if (typeof uniform[0] === 'object') {
+                for (u=0; u < uniform.length; u++) {
+                    // Set each struct in the array
+                    parsed.push(...parseUniforms(uniform[u], name + '[' + u + ']'));
+                }
+            }
+        }
+        // Boolean
+        else if (typeof uniform === 'boolean') {
+            parsed.push({
+                type: 'bool',
+                method: '1i',
+                name,
+                value: uniform
+            });
+        }
+        // Texture
+        else if (typeof uniform === 'string') {
+            parsed.push({
+                type: 'sampler2D',
+                method: '1i',
+                name,
+                value: uniform
+            });
+        }
+        // Structure
+        else if (typeof uniform === 'object') {
+            // Set each field in the struct
+            parsed.push(...parseUniforms(uniform, name));
+        }
+
+        // TODO: support other non-float types? (int, etc.)
+    }
+
+    return parsed;
 };
