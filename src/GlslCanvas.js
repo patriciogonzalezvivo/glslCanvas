@@ -207,19 +207,20 @@ void main(){\n\
                 // For textures, we need to track texture units, so we have a special setter
                 this.setTextureUniform(parsed[u].name, parsed[u].value[0]);
             } else {
-                this.uniform(parsed[u].method, parsed[u].name, parsed[u].value);
+                this.uniform(parsed[u].method, parsed[u].type, parsed[u].name, parsed[u].value);
             }
         }
 	}
 
 	// ex: program.uniform('3f', 'position', x, y, z);
-    uniform(method, name, ...value) { // 'value' is a method-appropriate arguments list
+    uniform(method, type, name, ...value) { // 'value' is a method-appropriate arguments list
         this.uniforms[name] = this.uniforms[name] || {};
         let uniform = this.uniforms[name];
 
         if (uniform.value === undefined || isDiff(uniform.value,value)) {
         	uniform.name = name;
         	uniform.value = value;
+        	uniform.type = type;
         	uniform.method = 'uniform' + method;
         	// console.log(uniform.method,uniform.name,uniform.value);
         	if (this.change || uniform.location === undefined) {
@@ -233,10 +234,11 @@ void main(){\n\
 		if (this.textures[name]===undefined) {
 			this.loadTexture(name,url);
 		} else {
-			this.gl.uniform1i( this.gl.getUniformLocation(this.program, name), this.texureIndex);
+			// this.gl.uniform1i( this.gl.getUniformLocation(this.program, name), this.texureIndex);
+			this.uniform("1i", "sampler2D", name, this.texureIndex);
 			this.gl.activeTexture(this.gl.TEXTURE0+this.texureIndex);
 			this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[name]);
-			this.uniform("2f", name+"Resolution", this.textures[name].image.width, this.textures[name].image.height);
+			this.uniform("2f", "vec2f", name+"Resolution", this.textures[name].image.width, this.textures[name].image.height);
 			this.texureIndex++;
 		}
 	}
@@ -270,7 +272,7 @@ void main(){\n\
 			mouse.y >= rect.top &&
 			mouse.y <= rect.bottom) {
 
-			this.setUniform("u_mouse", mouse.x-rect.left, this.canvas.height-(mouse.y-rect.top) ); 
+			this.uniform("2f", "vec2f", "u_mouse", mouse.x-rect.left, this.canvas.height-(mouse.y-rect.top) ); 
 		}
 	};
 
@@ -282,10 +284,10 @@ void main(){\n\
 			// set the time uniform
 			let timeFrame = Date.now();
 			let time = (timeFrame-this.timeLoad) / 1000.0;
-			this.uniform("1f","u_time",time);
+			this.uniform("1f","float","u_time",time);
 
 			// set the resolution uniform
-			this.uniform("2f","u_resolution", this.canvas.width, this.canvas.height );
+			this.uniform("2f","vec2f","u_resolution", this.canvas.width, this.canvas.height );
 
 			this.texureIndex = 0;
 			for (let tex in this.textures) {
