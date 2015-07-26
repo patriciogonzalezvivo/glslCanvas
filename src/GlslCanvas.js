@@ -57,44 +57,23 @@ export default class GlslCanvas {
 			return;
 		}
 
-		this.load(fragContent);
+		// Define Vertex buffer
+		let vertices = gl.createBuffer();
+		this.gl.bindBuffer( gl.ARRAY_BUFFER, vertices);
+		this.gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0,
+														1.0, -1.0,
+														-1.0,  1.0,
+														-1.0,  1.0,
+														1.0, -1.0,
+														1.0,  1.0]), gl.STATIC_DRAW);
+		gl.enableVertexAttribArray(0);
+		gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+		this.vbo.push(vertices);
 
+		this.load(fragContent);
+		
 		if (!this.program){
 			return;
-		}
-
-		// Construct VBO
-		if (this.program) {
-			// Define UVS buffer
-			let uvs;
-			let texCoordLocation = gl.getAttribLocation(this.program, "a_texcoord");
-			uvs = gl.createBuffer();
-			gl.bindBuffer( gl.ARRAY_BUFFER, uvs);
-			gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([0.0,  0.0,
-															1.0,  0.0,
-															0.0,  1.0,
-															0.0,  1.0,
-															1.0,  0.0,
-															1.0,  1.0]), gl.STATIC_DRAW);
-
-			gl.enableVertexAttribArray( texCoordLocation );
-			gl.vertexAttribPointer( texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-			this.vbo.push(uvs);
-			
-			// Define Vertex buffer
-			let vertices;
-			let positionLocation = gl.getAttribLocation(this.program, "a_position");
-			vertices = gl.createBuffer();
-			this.gl.bindBuffer( gl.ARRAY_BUFFER, vertices);
-			this.gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0,
-															1.0, -1.0,
-															-1.0,  1.0,
-															-1.0,  1.0,
-															1.0, -1.0,
-															1.0,  1.0]), gl.STATIC_DRAW);
-			gl.enableVertexAttribArray( positionLocation );
-			gl.vertexAttribPointer( positionLocation , 2, gl.FLOAT, false, 0, 0);
-			this.vbo.push(vertices);
 		}
 		
 		// load TEXTURES
@@ -136,11 +115,8 @@ precision mediump float;\n\
 uniform vec2 u_resolution;\n\
 uniform float u_time;\n\
 attribute vec2 a_position;\n\
-attribute vec2 a_texcoord;\n\
-varying vec2 v_texcoord;\n\
 void main() {\n\
  	gl_Position = vec4(a_position, 0.0, 1.0);\n\
- 	v_texcoord = a_texcoord;\n\
  }";
 		}
 
@@ -149,7 +125,6 @@ void main() {\n\
 			fragString += "\n\
 uniform vec2 u_resolution;\n\
 uniform float u_time;\n\
-varying vec2 v_texcoord;\n\
 void main(){\n\
 	vec2 st = gl_FragCoord.xy/u_resolution;\n\
 	gl_FragColor = vec4(st.x,st.y,abs(sin(u_time)),1.0);\n\
@@ -176,7 +151,7 @@ void main(){\n\
 		}
 
 		// Create and use program
-		let program = createProgram(this.gl, [vertexShader, fragmentShader]);
+		let program = createProgram(this.gl, [vertexShader, fragmentShader], [0],["a_position"]);
 		this.gl.useProgram(program);
 
 		// Delete shaders

@@ -132,12 +132,12 @@ export function createShader(_gl, _source, _type) {
  * @return {!WebGLShader} The created shader.
  */
 export function createProgram(gl, shaders, opt_attribs, opt_locations) {
-	var program = gl.createProgram();
-	for (var ii = 0; ii < shaders.length; ++ii) {
+	let program = gl.createProgram();
+	for (let ii = 0; ii < shaders.length; ++ii) {
 		gl.attachShader(program, shaders[ii]);
 	}
 	if (opt_attribs) {
-		for (var ii = 0; ii < opt_attribs.length; ++ii) {
+		for (let ii = 0; ii < opt_attribs.length; ++ii) {
 	  		gl.bindAttribLocation(
 		  	program,
 		  	opt_locations ? opt_locations[ii] : ii,
