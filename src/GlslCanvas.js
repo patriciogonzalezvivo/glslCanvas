@@ -211,7 +211,7 @@ void main(){\n\
 			this.uniform("1i", "sampler2D", name, this.texureIndex);
 			this.gl.activeTexture(this.gl.TEXTURE0+this.texureIndex);
 			this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[name]);
-			this.uniform("2f", "vec2f", name+"Resolution", this.textures[name].image.width, this.textures[name].image.height);
+			this.uniform("2f", "vec2", name+"Resolution", this.textures[name].image.width, this.textures[name].image.height);
 			this.texureIndex++;
 		}
 	}
