@@ -245,7 +245,7 @@ void main(){\n\
 			mouse.y >= rect.top &&
 			mouse.y <= rect.bottom) {
 
-			this.uniform("2f", "vec2f", "u_mouse", mouse.x-rect.left, this.canvas.height-(mouse.y-rect.top) ); 
+			this.uniform("2f", "vec2", "u_mouse", mouse.x-rect.left, this.canvas.height-(mouse.y-rect.top) ); 
 		}
 	};
 
@@ -260,7 +260,7 @@ void main(){\n\
 			this.uniform("1f","float","u_time",time);
 
 			// set the resolution uniform
-			this.uniform("2f","vec2f","u_resolution", this.canvas.width, this.canvas.height );
+			this.uniform("2f","vec2","u_resolution", this.canvas.width, this.canvas.height );
 
 			this.texureIndex = 0;
 			for (let tex in this.textures) {
