@@ -211,8 +211,8 @@ void main(){
         if (this.change || 
         	uniform.location === null ||
         	uniform.location === undefined || 
-        	uniform.value === undefined) {// || 
-        	// isDiff(uniform.value,value)) {
+        	uniform.value === undefined || 
+        	isDiff(uniform.value,value)) {
         	uniform.name = name;
         	uniform.value = value;
         	uniform.type = type;
