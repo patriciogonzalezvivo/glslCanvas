@@ -208,7 +208,11 @@ void main(){
         this.uniforms[name] = this.uniforms[name] || {};
         let uniform = this.uniforms[name];
 
-        if (this.change || uniform.value === undefined || isDiff(uniform.value,value)) {
+        if (this.change || 
+        	uniform.location === null ||
+        	uniform.location === undefined || 
+        	uniform.value === undefined || 
+        	isDiff(uniform.value,value)) {
         	uniform.name = name;
         	uniform.value = value;
         	uniform.type = type;
