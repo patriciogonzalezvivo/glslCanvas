@@ -34,8 +34,8 @@ export default class GlslCanvas {
 		this.gl = undefined;
 		this.program = undefined;
 		this.uniforms = {};
+		this.vbo = {};
 		this.isValid = false;
-		this.vbo = [];
 
 		// GL Context
 		let gl = setupWebGL(canvas);
@@ -57,25 +57,25 @@ export default class GlslCanvas {
 			return;
 		}
 
-		// Define Vertex buffer
-		let vertices = gl.createBuffer();
-		this.gl.bindBuffer( gl.ARRAY_BUFFER, vertices);
-		this.gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0,
-														1.0, -1.0,
-														-1.0,  1.0,
-														-1.0,  1.0,
-														1.0, -1.0,
-														1.0,  1.0]), gl.STATIC_DRAW);
-		gl.enableVertexAttribArray(0);
-		gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-		this.vbo.push(vertices);
+		// // Define Vertex buffer
+		this.vbo.texCoords = gl.createBuffer();
+		this.gl.bindBuffer( gl.ARRAY_BUFFER, this.vbo.texCoords);
+		this.gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0]), gl.STATIC_DRAW);
+		this.gl.enableVertexAttribArray(0);
+		this.gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+		this.vbo.vertices = gl.createBuffer();
+		this.gl.bindBuffer( gl.ARRAY_BUFFER, this.vbo.vertices);
+		this.gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0,  1.0,-1.0,  1.0,1.0, -1.0,1.0,  1.0]), gl.STATIC_DRAW);
+		this.gl.enableVertexAttribArray(1);
+		this.gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
 
 		this.load(fragContent);
 		
 		if (!this.program){
 			return;
 		}
-		
+
 		// load TEXTURES
 		this.textures = {};
 		let bLoadTextures = canvas.hasAttribute('data-textures');
@@ -97,12 +97,12 @@ export default class GlslCanvas {
 			this.gl.deleteTexture(tex);
 		}
 		this.textures = {};
-
+		for ( let att in this.attribs) {
+        	this.gl.deleteBuffer(this.attribs[att]);
+        }
         this.gl.useProgram(null);
         this.gl.deleteProgram(this.program);
         this.program = null;
-        this.gl.deleteBuffer(this.vbo );
-        this.vbo = null;
         this.gl = null;
     }
 
@@ -110,25 +110,43 @@ export default class GlslCanvas {
 
 		// Load default vertex shader if no one is pass
 		if (!vertString) {
-			vertString = "\n\
-precision mediump float;\n\
-uniform vec2 u_resolution;\n\
-uniform float u_time;\n\
-attribute vec2 a_position;\n\
-void main() {\n\
- 	gl_Position = vec4(a_position, 0.0, 1.0);\n\
- }";
+			vertString = `
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform float u_time;
+
+attribute vec2 a_position;
+attribute vec2 a_texcoord;
+
+varying vec2 v_texcoord;
+
+void main() {
+ 	gl_Position = vec4(a_position, 0.0, 1.0);
+ 	v_texcoord = a_texcoord;
+}
+`;
 		}
 
 		// Load default fragment shader if no one is pass
 		if (!fragString) {
-			fragString += "\n\
-uniform vec2 u_resolution;\n\
-uniform float u_time;\n\
-void main(){\n\
-	vec2 st = gl_FragCoord.xy/u_resolution;\n\
-	gl_FragColor = vec4(st.x,st.y,abs(sin(u_time)),1.0);\n\
-}";
+			fragString = `
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform float u_time;
+
+varying vec2 v_texcoord;
+
+void main(){
+	vec2 st = gl_FragCoord.xy/u_resolution;
+	gl_FragColor = vec4(st.x,st.y,abs(sin(u_time)),1.0);
+}
+`;
 		}
 
 		this.vertexString = vertString;
@@ -151,7 +169,7 @@ void main(){\n\
 		}
 
 		// Create and use program
-		let program = createProgram(this.gl, [vertexShader, fragmentShader], [0],["a_position"]);
+		let program = createProgram(this.gl, [vertexShader, fragmentShader], [0,1],["a_position","a_texcoord"]);
 		this.gl.useProgram(program);
 
 		// Delete shaders
@@ -163,9 +181,7 @@ void main(){\n\
 		this.program = program;
 		this.change = true;
 
-		if (this.vbo){
-			this.render(true);
-		}
+		this.render(true);
 	};
 
 	setUniform(name, ...value) {
