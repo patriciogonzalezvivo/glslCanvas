@@ -57,24 +57,26 @@ export default class GlslCanvas {
 			return;
 		}
 
-		// // Define Vertex buffer
-		this.vbo.texCoords = gl.createBuffer();
-		this.gl.bindBuffer( gl.ARRAY_BUFFER, this.vbo.texCoords);
-		this.gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0]), gl.STATIC_DRAW);
-		this.gl.enableVertexAttribArray(0);
-		this.gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-
-		this.vbo.vertices = gl.createBuffer();
-		this.gl.bindBuffer( gl.ARRAY_BUFFER, this.vbo.vertices);
-		this.gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0,  1.0,-1.0,  1.0,1.0, -1.0,1.0,  1.0]), gl.STATIC_DRAW);
-		this.gl.enableVertexAttribArray(1);
-		this.gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
-
 		this.load(fragContent);
 		
 		if (!this.program){
 			return;
 		}
+
+		// // Define Vertex buffer
+		let texCoordsLoc = gl.getAttribLocation(this.program, "a_texcoord");
+		this.vbo.texCoords = gl.createBuffer();
+		this.gl.bindBuffer( gl.ARRAY_BUFFER, this.vbo.texCoords);
+		this.gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0]), gl.STATIC_DRAW);
+		this.gl.enableVertexAttribArray(texCoordsLoc);
+		this.gl.vertexAttribPointer(texCoordsLoc, 2, gl.FLOAT, false, 0, 0);
+
+		let verticesLoc = gl.getAttribLocation(this.program, "a_position");
+		this.vbo.vertices = gl.createBuffer();
+		this.gl.bindBuffer( gl.ARRAY_BUFFER, this.vbo.vertices);
+		this.gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0,  1.0,-1.0,  1.0,1.0, -1.0,1.0,  1.0]), gl.STATIC_DRAW);
+		this.gl.enableVertexAttribArray(verticesLoc);
+		this.gl.vertexAttribPointer(verticesLoc, 2, gl.FLOAT, false, 0, 0);
 
 		// load TEXTURES
 		this.textures = {};
@@ -169,7 +171,7 @@ void main(){
 		}
 
 		// Create and use program
-		let program = createProgram(this.gl, [vertexShader, fragmentShader], [0,1],["a_position","a_texcoord"]);
+		let program = createProgram(this.gl, [vertexShader, fragmentShader]);//, [0,1],["a_texcoord","a_position"]);
 		this.gl.useProgram(program);
 
 		// Delete shaders
@@ -217,7 +219,6 @@ void main(){
         	uniform.value = value;
         	uniform.type = type;
         	uniform.method = 'uniform' + method;
-        	// console.log(uniform.method,uniform.name,uniform.value);
         	uniform.location = this.gl.getUniformLocation(this.program, name);
         	
         	this.gl[uniform.method].apply(this.gl, [uniform.location].concat(uniform.value));
