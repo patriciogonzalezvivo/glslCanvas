@@ -163,11 +163,11 @@ export function createProgram(gl, shaders, opt_attribs, opt_locations) {
 // By Brett Camber on
 // https://github.com/tangrams/tangram/blob/master/src/gl/glsl.js
 export function parseUniforms(uniforms, prefix = null) {
-    var parsed = [];
+    let parsed = [];
 
-    for (var name in uniforms) {
-        var uniform = uniforms[name];
-        var u;
+    for (let name in uniforms) {
+        let uniform = uniforms[name];
+        let u;
 
         if (prefix) {
             name = prefix + '.' + name;
@@ -214,14 +214,6 @@ export function parseUniforms(uniforms, prefix = null) {
                     name: name,
                     value: uniform
                 });
-                // for (u=0; u < uniform.length; u++) {
-                //     parsed.push({
-                //         type: 'sampler2D',
-                //         method: '1i',
-                //         name: name + '[' + u + ']',
-                //         value: uniform[u]
-                //     });
-                // }
             }
             // Array of arrays - but only arrays of vectors are allowed in this case
             else if (Array.isArray(uniform[0]) && typeof uniform[0][0] === 'number') {

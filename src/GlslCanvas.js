@@ -90,6 +90,10 @@ export default class GlslCanvas {
 
 		this.setMouse({x: 0, y: 0});
 		this.render(true);
+
+
+		// Events
+		this.canvas.addEventListener("resize", this.onResize);
 	};
 
 	destroy() {
@@ -209,17 +213,22 @@ void main(){
     uniform(method, type, name, ...value) { // 'value' is a method-appropriate arguments list
         this.uniforms[name] = this.uniforms[name] || {};
         let uniform = this.uniforms[name];
+        let change = isDiff(uniform.value,value);
+        if ( change || this.change || 
+        	uniform.location === undefined ||
+        	uniform.value === undefined ) {
 
-        if (this.change || 
-        	uniform.location === null ||
-        	uniform.location === undefined || 
-        	uniform.value === undefined || 
-        	isDiff(uniform.value,value)) {
         	uniform.name = name;
         	uniform.value = value;
         	uniform.type = type;
         	uniform.method = 'uniform' + method;
         	uniform.location = this.gl.getUniformLocation(this.program, name);
+        
+        	// if(Array.isArray(uniform.value[0])){
+        	// 	console.log(uniform," -> [",uniform.value[0],"]");
+        	// } else {
+        	// 	console.log(uniform," -> ",uniform.value);
+        	// }
         	
         	this.gl[uniform.method].apply(this.gl, [uniform.location].concat(uniform.value));
         }
@@ -266,9 +275,31 @@ void main(){
 			mouse.y >= rect.top &&
 			mouse.y <= rect.bottom) {
 
-			this.uniform("2f", "vec2", "u_mouse", mouse.x-rect.left, this.canvas.height-(mouse.y-rect.top) ); 
+			this.uniform("2f", "vec2", "u_mouse", mouse.x-rect.left, this.canvas.height-(mouse.y-rect.top) );
 		}
 	};
+
+	onResize() {
+		let realToCSSPixels = window.devicePixelRatio || 1;
+
+		// Lookup the size the browser is displaying the canvas in CSS pixels
+		// and compute a size needed to make our drawingbuffer match it in
+		// device pixels.
+		let displayWidth  = Math.floor(this.gl.canvas.clientWidth  * realToCSSPixels);
+		let displayHeight = Math.floor(this.gl.canvas.clientHeight * realToCSSPixels);
+
+		// Check if the canvas is not the same size.
+		if (this.gl.canvas.width  != displayWidth ||
+			this.gl.canvas.height != displayHeight) {
+
+			// Make the canvas the same size
+			this.gl.canvas.width  = displayWidth;
+			this.gl.canvas.height = displayHeight;
+
+			// Set the viewport to match
+			gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+		}
+	}
 
 	render(forceRender) {
 
