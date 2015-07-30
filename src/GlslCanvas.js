@@ -63,7 +63,7 @@ export default class GlslCanvas {
 			return;
 		}
 
-		// // Define Vertex buffer
+		// Define Vertex buffer
 		let texCoordsLoc = gl.getAttribLocation(this.program, "a_texcoord");
 		this.vbo.texCoords = gl.createBuffer();
 		this.gl.bindBuffer( gl.ARRAY_BUFFER, this.vbo.texCoords);
@@ -190,6 +190,10 @@ void main(){
 		this.render(true);
 	};
 
+	refreshUniforms() {
+		this.uniforms = {};
+	}
+
 	setUniform(name, ...value) {
 		let u = {};
 		u[name] = value; 
@@ -224,11 +228,11 @@ void main(){
         	uniform.method = 'uniform' + method;
         	uniform.location = this.gl.getUniformLocation(this.program, name);
         
-        	// if(Array.isArray(uniform.value[0])){
-        	// 	console.log(uniform," -> [",uniform.value[0],"]");
-        	// } else {
-        	// 	console.log(uniform," -> ",uniform.value);
-        	// }
+        	if(Array.isArray(uniform.value[0])){
+        		console.log(uniform," -> [",uniform.value[0],"]");
+        	} else {
+        		console.log(uniform," -> ",uniform.value);
+        	}
         	
         	this.gl[uniform.method].apply(this.gl, [uniform.location].concat(uniform.value));
         }
