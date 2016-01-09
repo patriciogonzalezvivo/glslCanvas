@@ -92,11 +92,28 @@ export default class GlslCanvas {
             }
         }
 
+        // Start
         this.setMouse({ x: 0, y: 0 });
         this.render(true);
 
-        // Events
+        // ========================== EVENTS
+        //
         this.canvas.addEventListener('resize', this.onResize);
+        let mouse = {x: 0, y: 0};
+        document.addEventListener('mousemove', (e) => { 
+            mouse.x = e.clientX || e.pageX; 
+            mouse.y = e.clientY || e.pageY 
+        }, false);
+
+
+        let sandbox = this;
+        function RenderLoop() {
+            sandbox.setMouse(mouse);
+            sandbox.render();
+            window.requestAnimationFrame(RenderLoop);
+        }
+
+        RenderLoop();
     }
 
     destroy() {

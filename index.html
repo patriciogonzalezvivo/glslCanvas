@@ -68,17 +68,8 @@
 			}
 		}
 
-		function render_all_GlslCanvas(){
-			for(var i = 0; i < billboards.length; i++){
-				billboards[i].setMouse(mouse);
-				billboards[i].render();
-			}
-			window.requestAnimFrame(render_all_GlslCanvas);
-		}
-
 		window.onload = function () { 
 			load_all_GlslCanvas();
-			render_all_GlslCanvas(); 
 		};
 		</script>
 	</body>
