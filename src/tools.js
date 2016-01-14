@@ -15,21 +15,6 @@ export function nextHighestPowerOfTwo(x) {
     return x + 1;
 }
 
-export function fetchHTTP(url, methood) {
-    let request = new XMLHttpRequest(),
-        response;
-
-    request.onreadystatechange = function () {
-        if (request.readyState === 4 && request.status === 200) {
-            response = request.responseText;
-        }
-    };
-    request.open(methood ? methood : 'GET', url, false);
-    request.overrideMimeType('text/plain');
-    request.send();
-    return response;
-}
-
 export function FormatNumberLength(num, length) {
     let r = num.toString();
     while (r.length < length) {

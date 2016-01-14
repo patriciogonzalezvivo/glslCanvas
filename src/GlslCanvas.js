@@ -21,7 +21,9 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { fetchHTTP, isCanvasVisible, isDiff } from './tools';
+import xhr from 'xhr';
+
+import { isCanvasVisible, isDiff } from './tools';
 import { setupWebGL, createShader, createProgram, parseUniforms, loadTexture } from './gl';
 
 export default class GlslCanvas {
@@ -32,6 +34,40 @@ export default class GlslCanvas {
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
+        
+        this.vertexString = `
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform float u_time;
+
+attribute vec2 a_position;
+attribute vec2 a_texcoord;
+
+varying vec2 v_texcoord;
+
+void main() {
+    gl_Position = vec4(a_position, 0.0, 1.0);
+    v_texcoord = a_texcoord;
+}
+`;
+        this.fragmentString = `
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform float u_time;
+
+varying vec2 v_texcoord;
+
+void main(){
+    vec2 st = gl_FragCoord.xy/u_resolution;
+    gl_FragColor = vec4(st.x,st.y,abs(sin(u_time)),1.0);
+}
+`;
 
         // GL Context
         let gl = setupWebGL(canvas);
@@ -42,26 +78,28 @@ export default class GlslCanvas {
         this.timeLoad = Date.now();
 
         // Load shader
-        let fragContent = '';
         if (canvas.hasAttribute('data-fragment')) {
-            fragContent = canvas.getAttribute('data-fragment');
+            this.fragmentString = canvas.getAttribute('data-fragment');
         }
         else if (canvas.hasAttribute('data-fragment-url')) {
             let source = canvas.getAttribute('data-fragment-url');
-            fragContent = fetchHTTP(source);
+            xhr.get(source, (error, response, body) => {
+                this.load(body,this.vertexString);
+            });
         }
 
         // Load shader
-        let vertexContent = undefined;
         if (canvas.hasAttribute('data-vertex')) {
-            vertexContent = canvas.getAttribute('data-vertex');
+            this.vertexString = canvas.getAttribute('data-vertex');
         }
         else if (canvas.hasAttribute('data-vertex-url')) {
             let source = canvas.getAttribute('data-vertex-url');
-            vertexContent = fetchHTTP(source);
+            xhr.get(source, (error, response, body) => {
+                this.load(this.fragmentString,body);
+            });
         }
 
-        this.load(fragContent, vertexContent);
+        this.load();
 
         if (!this.program) {
             return;
@@ -133,57 +171,23 @@ export default class GlslCanvas {
     }
 
     load(fragString, vertString) {
-        // Load default vertex shader if no one is pass
-        if (!vertString) {
-            vertString = `
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-uniform vec2 u_resolution;
-uniform float u_time;
-
-attribute vec2 a_position;
-attribute vec2 a_texcoord;
-
-varying vec2 v_texcoord;
-
-void main() {
-    gl_Position = vec4(a_position, 0.0, 1.0);
-    v_texcoord = a_texcoord;
-}
-`;
+        // Load vertex shader if there is one
+        if (vertString) {
+            this.vertexString = vertString;
         }
 
-        // Load default fragment shader if no one is pass
-        if (!fragString) {
-            fragString = `
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-uniform vec2 u_resolution;
-uniform float u_time;
-
-varying vec2 v_texcoord;
-
-void main(){
-    vec2 st = gl_FragCoord.xy/u_resolution;
-    gl_FragColor = vec4(st.x,st.y,abs(sin(u_time)),1.0);
-}
-`;
+        // Load fragment shader if there is one
+        if (fragString) {
+            this.fragmentString = fragString;
         }
-
-        this.vertexString = vertString;
-        this.fragmentString = fragString;
 
         this.animated = false;
-        let nTimes = (fragString.match(/u_time/g) || []).length;
-        let nMouse = (fragString.match(/u_mouse/g) || []).length;
+        let nTimes = (this.fragmentString.match(/u_time/g) || []).length;
+        let nMouse = (this.fragmentString.match(/u_mouse/g) || []).length;
         this.animated = nTimes > 1 || nMouse > 1;
 
-        let vertexShader = createShader(this.gl, vertString, this.gl.VERTEX_SHADER);
-        let fragmentShader = createShader(this.gl, fragString, this.gl.FRAGMENT_SHADER);
+        let vertexShader = createShader(this.gl, this.vertexString, this.gl.VERTEX_SHADER);
+        let fragmentShader = createShader(this.gl, this.fragmentString, this.gl.FRAGMENT_SHADER);
 
         // If Fragment shader fails load a empty one to sign the error
         if (!fragmentShader) {
