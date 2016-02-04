@@ -23,11 +23,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import xhr from 'xhr';
 
-import { isCanvasVisible, isDiff } from './tools';
+import { isCanvasVisible, isDiff, subscribeMixin } from './tools';
 import { setupWebGL, createShader, createProgram, parseUniforms, loadTexture } from './gl';
 
 export default class GlslCanvas {
     constructor(canvas) {
+        subscribeMixin(this);
+
         this.canvas = canvas;
         this.gl = undefined;
         this.program = undefined;
@@ -181,12 +183,12 @@ void main(){
         let nMouse = (this.fragmentString.match(/u_mouse/g) || []).length;
         this.animated = nTimes > 1 || nMouse > 1;
 
-        let vertexShader = createShader(this.gl, this.vertexString, this.gl.VERTEX_SHADER);
-        let fragmentShader = createShader(this.gl, this.fragmentString, this.gl.FRAGMENT_SHADER);
+        let vertexShader = createShader(this, this.vertexString, this.gl.VERTEX_SHADER);
+        let fragmentShader = createShader(this, this.fragmentString, this.gl.FRAGMENT_SHADER);
 
         // If Fragment shader fails load a empty one to sign the error
         if (!fragmentShader) {
-            fragmentShader = createShader(this.gl, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', this.gl.FRAGMENT_SHADER);
+            fragmentShader = createShader(this, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', this.gl.FRAGMENT_SHADER);
             this.isValid = false;
         }
         else {
@@ -194,7 +196,7 @@ void main(){
         }
 
         // Create and use program
-        let program = createProgram(this.gl, [vertexShader, fragmentShader]);//, [0,1],['a_texcoord','a_position']);
+        let program = createProgram(this, [vertexShader, fragmentShader]);//, [0,1],['a_texcoord','a_position']);
         this.gl.useProgram(program);
 
         // Delete shaders
@@ -336,7 +338,7 @@ void main(){
     }
 
     version() {
-        return '0.0.1';
+        return '0.0.2';
     }
 }
 

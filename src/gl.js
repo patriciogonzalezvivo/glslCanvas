@@ -109,7 +109,9 @@ export function create3DContext(canvas, optAttribs) {
 /*
  *	Create a Vertex of a specific type (gl.VERTEX_SHADER/)
  */
-export function createShader(gl, source, type) {
+export function createShader(main, source, type) {
+    let gl = main.gl;
+
     let shader = gl.createShader(type);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
@@ -120,6 +122,7 @@ export function createShader(gl, source, type) {
         // Something went wrong during compilation; get the error
         lastError = gl.getShaderInfoLog(shader);
         console.error('*** Error compiling shader ' + shader + ':' + lastError);
+        main.trigger('error', { shader: shader, source: source, type: type, error: lastError });
         gl.deleteShader(shader);
         return null;
     }
@@ -135,7 +138,9 @@ export function createShader(gl, source, type) {
  * @param {function(string): void) opt_errorCallback callback for errors.
  * @return {!WebGLShader} The created shader.
  */
-export function createProgram(gl, shaders, optAttribs, optLocations) {
+export function createProgram(main, shaders, optAttribs, optLocations) {
+    let gl = main.gl;
+
     let program = gl.createProgram();
     for (let ii = 0; ii < shaders.length; ++ii) {
         gl.attachShader(program, shaders[ii]);
@@ -156,6 +161,7 @@ export function createProgram(gl, shaders, optAttribs, optLocations) {
         // something went wrong with the link
         lastError = gl.getProgramInfoLog(program);
         console.log('Error in program linking:' + lastError);
+        main.trigger('error', { program: program, source: source, type: type, error: lastError });
 
         gl.deleteProgram(program);
         return null;
