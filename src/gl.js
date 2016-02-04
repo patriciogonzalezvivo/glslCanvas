@@ -161,8 +161,6 @@ export function createProgram(main, shaders, optAttribs, optLocations) {
         // something went wrong with the link
         lastError = gl.getProgramInfoLog(program);
         console.log('Error in program linking:' + lastError);
-        main.trigger('error', { program: program, source: source, type: type, error: lastError });
-
         gl.deleteProgram(program);
         return null;
     }
