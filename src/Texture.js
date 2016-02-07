@@ -15,14 +15,11 @@ export default class Texture {
         this.source = null;
         this.source_type = null;
         this.loading = null;    // a Promise object to track the loading state of this texture
-        this.filtering = options.filtering;
-        this.sprites = options.sprites;
-        this.texcoords = {};    // sprite UVs ([0, 1] range)
-        this.sizes = {};        // sprite sizes (pixel size)
+        this.filtering = options.filtering || 'linear';
 
         // Default to a 1-pixel black texture so we can safely render while we wait for an image to load
         // See: http://stackoverflow.com/questions/19722247/webgl-wait-for-texture-to-load
-        this.setData(1, 1, new Uint8Array([0, 0, 0, 255]), { filtering: 'nearest' });
+        this.setData(1, 1, new Uint8Array([0, 0, 0, 255]), { filtering: this.filtering || 'linear' });
 
         this.load(options);
     }
@@ -170,6 +167,7 @@ export default class Texture {
 
     // Determines appropriate filtering mode
     setFiltering(options = {}) {
+
         if (!this.valid) {
             return;
         }

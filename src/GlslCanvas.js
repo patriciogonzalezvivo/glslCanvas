@@ -221,14 +221,13 @@ void main(){
             options.url = url_elemnt_or_data;
         }
         else if (typeof url_elemnt_or_data === 'object' && url_elemnt_or_data.data && url_elemnt_or_data.width && url_elemnt_or_data.height) {
-            option.data = url_elemnt_or_data.data;
-            option.width = url_elemnt_or_data.width;
-            option.height = url_elemnt_or_data.height;
+            options.data = url_elemnt_or_data.data;
+            options.width = url_elemnt_or_data.width;
+            options.height = url_elemnt_or_data.height;
         }
-        else if (typeof url_canvas_or_image === 'object') {
-            option.element = url_elemnt_or_data;
+        else if (typeof url_elemnt_or_data === 'object') {
+            options.element = url_elemnt_or_data;
         }
-
         this.textures[name] = new Texture(this.gl, name, options);
     }
 
@@ -272,9 +271,9 @@ void main(){
         }
     }
 
-    setTextureUniform(name, url) {
+    setTextureUniform(name, texture, options) {
         if (this.textures[name] === undefined) {
-            this.loadTexture(name, url);
+            this.loadTexture(name, texture, options);
         }
         else {
             this.uniform('1i', 'sampler2D', name, this.texureIndex);
@@ -327,7 +326,7 @@ void main(){
 
             this.texureIndex = 0;
             for (let tex in this.textures) {
-                this.setUniform(tex, this.textures[tex].url);
+                this.setTextureUniform(tex);
             }
 
             // Draw the rectangle.
