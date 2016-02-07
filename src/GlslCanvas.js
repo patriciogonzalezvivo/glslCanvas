@@ -25,6 +25,7 @@ import xhr from 'xhr';
 
 import { isCanvasVisible, isDiff, subscribeMixin } from './tools';
 import { setupWebGL, createShader, createProgram, parseUniforms, loadTexture } from './gl';
+import Texture from './Texture';
 
 export default class GlslCanvas {
     constructor(canvas) {
@@ -211,24 +212,24 @@ void main(){
         this.render(true);
     }
 
-    loadTexture(name, url) {
-        let tex = this.gl.createTexture();
+    loadTexture(name, url_elemnt_or_data, options) {
+        if (!options) {
+            options = {};
+        }
 
-        this.gl.bindTexture(this.gl.TEXTURE_2D, tex);
-        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 0, 255])); // red
+        if (typeof url_elemnt_or_data === 'string') {
+            options.url = url_elemnt_or_data;
+        }
+        else if (typeof url_elemnt_or_data === 'object' && url_elemnt_or_data.data && url_elemnt_or_data.width && url_elemnt_or_data.height) {
+            option.data = url_elemnt_or_data.data;
+            option.width = url_elemnt_or_data.width;
+            option.height = url_elemnt_or_data.height;
+        }
+        else if (typeof url_canvas_or_image === 'object') {
+            option.element = url_elemnt_or_data;
+        }
 
-        tex.image = new Image();
-        tex.image.onload = function(glslCanvas, tex) {
-            return function() {
-                loadTexture(glslCanvas.gl, tex);
-                glslCanvas.render(true);
-            };
-        }(this, tex);
-        tex.name = name;
-        tex.url = url;
-        tex.image.src = url;
-
-        this.textures[name] = tex;
+        this.textures[name] = new Texture(this.gl, name, options);
     }
 
     refreshUniforms() {
@@ -277,9 +278,8 @@ void main(){
         }
         else {
             this.uniform('1i', 'sampler2D', name, this.texureIndex);
-            this.gl.activeTexture(this.gl.TEXTURE0 + this.texureIndex);
-            this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[name]);
-            this.uniform('2f', 'vec2', name + 'Resolution', this.textures[name].image.width, this.textures[name].image.height);
+            this.textures[name].bind(this.texureIndex);
+            this.uniform('2f', 'vec2', name + 'Resolution', this.textures[name].width, this.textures[name].height);
             this.texureIndex++;
         }
     }
