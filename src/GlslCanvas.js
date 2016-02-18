@@ -28,8 +28,10 @@ import { setupWebGL, createShader, createProgram, parseUniforms, loadTexture } f
 import Texture from './Texture';
 
 export default class GlslCanvas {
-    constructor(canvas) {
+    constructor(canvas, options) {
         subscribeMixin(this);
+
+        options = options || {};
 
         this.canvas = canvas;
         this.gl = undefined;
@@ -38,7 +40,7 @@ export default class GlslCanvas {
         this.vbo = {};
         this.isValid = false;
         
-        this.vertexString = `
+        this.vertexString = options.vertexString || `
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -53,7 +55,7 @@ void main() {
     v_texcoord = a_texcoord;
 }
 `;
-        this.fragmentString = `
+        this.fragmentString = options.fragmentString ||`
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -65,10 +67,10 @@ void main(){
 }
 `;
         // Allow alpha
-        canvas.style.backgroundColor = "rgba(1,1,1,0)";
+        canvas.style.backgroundColor = options.backgroundColor || 'rgba(1,1,1,0)';
 
         // GL Context
-        let gl = setupWebGL(canvas);
+        let gl = setupWebGL(canvas, options);
         if (!gl) {
             return;
         }
