@@ -1,5 +1,5 @@
 // Texture management
-import { isPowerOf2 } from './tools';
+import { isPowerOf2 } from '../tools/common';
 
 // GL texture wrapper object for keeping track of a global set of textures, keyed by a unique user-defined name
 export default class Texture {

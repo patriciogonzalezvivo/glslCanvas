@@ -23,9 +23,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import xhr from 'xhr';
 
-import { isCanvasVisible, isDiff, subscribeMixin } from './tools';
-import { setupWebGL, createShader, createProgram, parseUniforms, loadTexture } from './gl';
-import Texture from './Texture';
+import { setupWebGL, createShader, createProgram, parseUniforms, loadTexture } from './gl/gl';
+import Texture from './gl/Texture';
+
+import { isCanvasVisible, isDiff } from './tools/common';
+import { subscribeMixin } from './tools/mixin';
 
 export default class GlslCanvas {
     constructor(canvas, options) {
@@ -211,6 +213,9 @@ void main(){
         this.program = program;
         this.change = true;
 
+        // Trigger event
+        this.trigger('load', {});
+
         this.render(true);
     }
 
@@ -333,6 +338,9 @@ void main(){
 
             // Draw the rectangle.
             this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+            
+            // Trigger event
+            this.trigger('render', {});
 
             this.change = false;
         }
