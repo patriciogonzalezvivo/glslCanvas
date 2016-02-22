@@ -25,7 +25,6 @@ export function subscribeMixin (target) {
                     }
                 } 
             }
-            
         },
 
         listSubscriptions () {
