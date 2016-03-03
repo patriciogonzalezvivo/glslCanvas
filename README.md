@@ -2,26 +2,22 @@
 
 ## How to use it?
 
-First, make sure you are loading the latest version of ```GlslCanvas.min.js``` on your page by adding this line to your HTML:
+There are different ways to do this. But first, make sure you are loading the latest version of ```GlslCanvas.min.js``` on your page by adding this line to your HTML:
 ```html
 <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/build/GlslCanvas.min.js"></script>
 ```
 
-You should have a canvas element in your HTML: 
+### The easy way
+
+Make a canvas element in your HTML, make sure the class name is ```glslCanvas``` and to assign a shader to it, trought a url using the attribute ```data-fragment-url``` or directly writing your code inside the ```data-fragment``` attribute.
 
 ```html
-<canvas id="glslCanvas" data-fragment-url="shader.frag" width="500" height="500"></canvas>
+<canvas class="glslCanvas" data-fragment-url="shader.frag" width="500" height="500"></canvas>
 ```
 
-Then initialize a new GlslCanvas on that element in Javascript:
+That's all! glslCanvas will automatically load a WebGL context in that ```<canvas>``` element, compile the shader and animate it for you.
 
-```javascript
-var dom = document.getElementById("glslCanvas");
-var sandbox = new GlslCanvas(dom);
-sandbox.render();
-```
-
-As you can see, you can load the fragment shader by setting the attribute ```data-fragment-url``` to a url. But there are also a few other ways to load shaders and textures:
+As you can see, in this example we are loading the fragment shader by setting the attribute ```data-fragment-url``` to a url. But there are also a few other ways to load data to our ```glslCanvas```:
 
 * ```data-fragment``` : load a fragment shader by providing the content of the shader as a string
 * ```data-fragment-url``` : load a fragment shader by providing a valid url
@@ -29,7 +25,22 @@ As you can see, you can load the fragment shader by setting the attribute ```dat
 * ```data-vertex-url``` : load a fragment shader by providing a valid url
 * ```data-textures```: add a list of texture urls separated by commas (ex: ```data-textures="texture.jpg,normal_map.png,something.jpg"```). Textures will be assigned in order to ```uniform sampler2D``` variables with names following this style: ```u_tex0```, ```u_tex1```, ```u_tex2```, etc.
 
-If you prefer to load shaders through Javascript instead of the DOM, you can do:
+All the catched ```.glslCanvas``` element whill be stored in the ```windows.glslCanvases``` array.
+
+### The JS way
+ 
+Create a ```<canvas>``` element and construct a ```glsCanvas()``` sandbox from it.
+
+```javascript
+var canvas = document.createElement("canvas");
+var sandbox = new GlslCanvas(canvas);
+```
+
+In the case you need to reload the 
+
+### Reloading shaders from JS
+
+You can change the content of the shader as many times you want. Here are some examples:
 
 ```javascript
 // Load only the Fragment Shader
@@ -38,10 +49,10 @@ sandbox.load(string_frag_code);
 
 // Load a Fragment and Vertex Shader
 var string_vert_code = "attribute vec4 a_position; main(){\ggl_Position = a_position;\n}\n";
-sandbox.load(string_frag_code,string_vert_code);
+sandbox.load(string_frag_code, string_vert_code);
 ```
 
-### Uniforms
+### Default Uniforms
 
 Some uniforms are automatically loaded for you:
 
@@ -67,62 +78,9 @@ sandbox.setUniform("u_color",1,0,0);
 sandbox.setUniform("u_texture","data/texture.jpg");
 ```
 
-### Quick start
+### Quick start demo
 
-In the [```index.html```](index.html) file, you will find handy example code to automatically load shaders into the present canvas using element attributes. A more generic version of the code in index.html could look like this:
-
-```javascript
-
-    // 
-    window.onload = function () { 
-        load_all_GlslCanvas();
-        render_all_GlslCanvas(); 
-    };
-
-    // Keep track of the mouse
-    var mouse = {x: 0, y: 0};
-    document.addEventListener('mousemove', function(e){ 
-        mouse.x = e.clientX || e.pageX; 
-        mouse.y = e.clientY || e.pageY 
-    }, false);
-
-    // Provides requestAnimationFrame in a cross browser way.
-    window.requestAnimFrame = (function() {
-        return  window.requestAnimationFrame ||
-                window.webkitRequestAnimationFrame ||
-                window.mozRequestAnimationFrame ||
-                window.oRequestAnimationFrame ||
-                window.msRequestAnimationFrame ||
-                function(callback, element) {
-                    return window.setTimeout(callback, 1000/60);
-             };
-    })();
-    
-    var billboards = []; 
-    function load_all_GlslCanvas() {
-        var list = document.getElementsByTagName("canvas");
-
-        // Load shaders on canvas
-        for(var i = 0; i < list.length; i++){
-            var sandbox = new GlslCanvas(list[i]);
-            if (sandbox.isValid) {
-                billboards.push(sandbox);
-            }
-        }
-    }
-
-    function render_all_GlslCanvas(){
-        for(var i = 0; i < billboards.length; i++){
-            billboards[i].setMouse(mouse);
-            billboards[i].render();
-        }
-        window.requestAnimFrame(render_all_GlslCanvas);
-    }
-```
-
-As you can see, this code also updates the position of the mouse.
-
-## Demo
+In the [```index.html```](index.html) file, you will find handy example code to start.
 
 [Demo page: patriciogonzalezvivo.github.io/glslCanvas/](http://patriciogonzalezvivo.github.io/glslCanvas/)
 
@@ -148,4 +106,3 @@ gulp
 * Push to your local fork and make your pull request
 
 Thank you
-

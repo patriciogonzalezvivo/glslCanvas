@@ -260,10 +260,11 @@ void main(){
                 this.uniform(parsed[u].method, parsed[u].type, parsed[u].name, parsed[u].value);
             }
         }
+        this.render(true);
     }
 
 	// ex: program.uniform('3f', 'position', x, y, z);
-    uniform(method, type, name, ...value) { // 'value' is a method-appropriate arguments list
+    uniform (method, type, name, ...value) { // 'value' is a method-appropriate arguments list
         this.uniforms[name] = this.uniforms[name] || {};
         let uniform = this.uniforms[name];
         let change = isDiff(uniform.value, value);
@@ -352,3 +353,18 @@ void main(){
 }
 
 window.GlslCanvas = GlslCanvas;
+window.glslCanvases = [];
+
+function loadAllGlslCanvas() {
+    var list = document.getElementsByClassName("glslCanvas");
+    for(var i = 0; i < list.length; i++){
+        var sandbox = new GlslCanvas(list[i]);
+        if (sandbox.isValid) {
+            window.glslCanvases.push(sandbox);
+        }
+    }
+}
+
+window.onload = function () { 
+    loadAllGlslCanvas();
+};
