@@ -157,13 +157,11 @@ void main(){
         }
 
         if (canvas.hasAttribute('width')) {
-            console.log('seting width to ', canvas.getAttribute('width'));
             this.canvas.style.width = canvas.getAttribute('width');
             this.onResize();
         }
 
         if (canvas.hasAttribute('height')) {
-            console.log('seting height to ', canvas.getAttribute('height'));
             this.canvas.style.height = canvas.getAttribute('height');
             this.onResize();
         }
