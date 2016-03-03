@@ -68,8 +68,6 @@ void main(){
     gl_FragColor = vec4(0.0);
 }
 `;
-        // Allow alpha
-        canvas.style.backgroundColor = options.backgroundColor || 'rgba(1,1,1,0)';
 
         // GL Context
         let gl = setupWebGL(canvas, options);
@@ -78,6 +76,9 @@ void main(){
         }
         this.gl = gl;
         this.timeLoad = Date.now();
+
+        // Allow alpha
+        canvas.style.backgroundColor = options.backgroundColor || 'rgba(1,1,1,0)';
 
         // Load shader
         if (canvas.hasAttribute('data-fragment')) {
@@ -139,6 +140,8 @@ void main(){
         // ========================== EVENTS
         //
         this.canvas.addEventListener('resize', this.onResize);
+        // this.canvas.onresize= this.onResize;
+
         let mouse = {x: 0, y: 0};
         document.addEventListener('mousemove', (e) => { 
             mouse.x = e.clientX || e.pageX; 
@@ -151,6 +154,18 @@ void main(){
             sandbox.setMouse(mouse);
             sandbox.render();
             window.requestAnimationFrame(RenderLoop);
+        }
+
+        if (canvas.hasAttribute('width')) {
+            console.log('seting width to ', canvas.getAttribute('width'));
+            this.canvas.style.width = canvas.getAttribute('width');
+            this.onResize();
+        }
+
+        if (canvas.hasAttribute('height')) {
+            console.log('seting height to ', canvas.getAttribute('height'));
+            this.canvas.style.height = canvas.getAttribute('height');
+            this.onResize();
         }
 
         RenderLoop();
@@ -219,21 +234,21 @@ void main(){
         this.render(true);
     }
 
-    loadTexture(name, url_elemnt_or_data, options) {
+    loadTexture(name, url_element_or_data, options) {
         if (!options) {
             options = {};
         }
 
-        if (typeof url_elemnt_or_data === 'string') {
-            options.url = url_elemnt_or_data;
+        if (typeof url_element_or_data === 'string') {
+            options.url = url_element_or_data;
         }
-        else if (typeof url_elemnt_or_data === 'object' && url_elemnt_or_data.data && url_elemnt_or_data.width && url_elemnt_or_data.height) {
-            options.data = url_elemnt_or_data.data;
-            options.width = url_elemnt_or_data.width;
-            options.height = url_elemnt_or_data.height;
+        else if (typeof url_element_or_data === 'object' && url_element_or_data.data && url_element_or_data.width && url_element_or_data.height) {
+            options.data = url_element_or_data.data;
+            options.width = url_element_or_data.width;
+            options.height = url_element_or_data.height;
         }
-        else if (typeof url_elemnt_or_data === 'object') {
-            options.element = url_elemnt_or_data;
+        else if (typeof url_element_or_data === 'object') {
+            options.element = url_element_or_data;
         }
         this.textures[name] = new Texture(this.gl, name, options);
     }
