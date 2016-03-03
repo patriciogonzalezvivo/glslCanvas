@@ -366,14 +366,16 @@ void main(){
 }
 
 window.GlslCanvas = GlslCanvas;
-window.glslCanvases = [];
 
 function loadAllGlslCanvas() {
     var list = document.getElementsByClassName("glslCanvas");
-    for(var i = 0; i < list.length; i++){
-        var sandbox = new GlslCanvas(list[i]);
-        if (sandbox.isValid) {
-            window.glslCanvases.push(sandbox);
+    if (list.length>0) {
+        window.glslCanvases = [];
+        for(var i = 0; i < list.length; i++){
+            var sandbox = new GlslCanvas(list[i]);
+            if (sandbox.isValid) {
+                window.glslCanvases.push(sandbox);
+            }
         }
     }
 }
