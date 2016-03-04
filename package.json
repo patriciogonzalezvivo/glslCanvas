@@ -1,10 +1,13 @@
 {
-  "name": "glslcanvas",
-  "version": "0.0.1",
-  "description": "Easy GLSL Fragment Shader sandbox ",
+  "name": "glslCanvas",
+  "version": "0.0.3",
+  "description": "Simple GLSL Fragment Shader Sandbox ",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "postinstall": "ln -nsf ../src/js node_modules/app",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "jshint *.js src/ || true; jscs *.js src/ || true",
+    "build": "modernizr -c modernizr-config.json -d build/js; gulp build"
   },
   "repository": {
     "type": "git",
@@ -23,16 +26,26 @@
   },
   "homepage": "https://github.com/patriciogonzalezvivo/glslCanvas#readme",
   "devDependencies": {
-    "babelify": "^6.1.2",
-    "browserify": "^10.2.4",
+    "babelify": "^6.4.0",
+    "browserify": "^11.2.0",
+    "browserify-shim": "^3.8.11",
     "gulp": "^3.9.0",
-    "gulp-babel": "^5.1.0",
-    "gulp-concat": "^2.6.0",
-    "gulp-livereload": "^3.8.0",
-    "gulp-sourcemaps": "^1.5.2",
-    "gulp-uglify": "^1.2.0",
-    "gulp-util": "^3.0.6",
+    "gulp-livereload": "^3.8.1",
+    "gulp-plumber": "^1.0.1",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-uglify": "^1.4.2",
+    "gulp-util": "^3.0.7",
+    "jscs": "^2.4.0",
+    "jshint": "^2.8.0",
+    "modernizr": "^3.1.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0"
+  },
+  "dependencies": {
+    "babel": "^5.8.29",
+    "babel-runtime": "5.8.29",
+    "xhr": "^2.2.0"
+  },
+  "browserify-shim": {
   }
 }

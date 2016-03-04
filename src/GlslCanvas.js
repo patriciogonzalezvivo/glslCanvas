@@ -4,7 +4,7 @@ The MIT License (MIT)
 Copyright (c) 2015 Patricio Gonzalez Vivo ( http://www.patriciogonzalezvivo.com )
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
+this software and associated documentation files (the 'Software'), to deal in
 the Software without restriction, including without limitation the rights to
 use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
 the Software, and to permit persons to whom the Software is furnished to do so,
@@ -13,7 +13,7 @@ subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
 FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
@@ -21,229 +21,369 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { fetchHTTP, isCanvasVisible } from "./tools"
-import { setupWebGL, createShader, createProgram, loadTexture } from "./gl"
+import xhr from 'xhr';
 
-/**
- * 	GLSL CANVAS
- */
+import { setupWebGL, createShader, createProgram, parseUniforms, loadTexture } from './gl/gl';
+import Texture from './gl/Texture';
+
+import { isCanvasVisible, isDiff } from './tools/common';
+import { subscribeMixin } from './tools/mixin';
+
 export default class GlslCanvas {
-	constructor(canvas) {
+    constructor(canvas, options) {
+        subscribeMixin(this);
 
-		this.canvas = canvas;
-		this.isValid = false;
+        options = options || {};
 
-		let gl = setupWebGL(canvas);
-		if (!gl) {
-			return;
-		}
-		this.gl = gl;
-		this.timeLoad = Date.now();
+        this.width = canvas.clientWidth;
+        this.height = canvas.clientHeight;
 
-		// Load shader
-		let fragContent = "";
-		if (canvas.hasAttribute("data-fragment")) {
-			fragContent = canvas.getAttribute('data-fragment');
-		} else if (canvas.hasAttribute("data-fragment-url")) {
-			let source = canvas.getAttribute('data-fragment-url');
-			fragContent = fetchHTTP(source);
-		} else {
-			console.log("No data");
-			return;
-		}
+        this.canvas = canvas;
+        this.gl = undefined;
+        this.program = undefined;
+        this.uniforms = {};
+        this.vbo = {};
+        this.isValid = false;
+        
+        this.vertexString = options.vertexString || `
+#ifdef GL_ES
+precision mediump float;
+#endif
 
-		this.load(fragContent);
+attribute vec2 a_position;
+attribute vec2 a_texcoord;
 
-		if (!this.program){
-			return
-		}
+varying vec2 v_texcoord;
 
-		// Construct VBO
-		this.vbo = [];
-		if (this.program) {
-			// Define UVS buffer
-			let uvs;
-			let texCoordLocation = gl.getAttribLocation(this.program, "a_texcoord");
-			uvs = gl.createBuffer();
-			gl.bindBuffer( gl.ARRAY_BUFFER, uvs);
-			gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([0.0,  0.0,
-															1.0,  0.0,
-															0.0,  1.0,
-															0.0,  1.0,
-															1.0,  0.0,
-															1.0,  1.0]), gl.STATIC_DRAW);
-			gl.enableVertexAttribArray( texCoordLocation );
-			gl.vertexAttribPointer( texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-			this.vbo.push(uvs);
-			
-			// Define Vertex buffer
-			let vertices;
-			let positionLocation = gl.getAttribLocation(this.program, "a_position");
-			vertices = gl.createBuffer();
-			this.gl.bindBuffer( gl.ARRAY_BUFFER, vertices);
-			this.gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0,
-															1.0, -1.0,
-															-1.0,  1.0,
-															-1.0,  1.0,
-															1.0, -1.0,
-															1.0,  1.0]), gl.STATIC_DRAW);
-			gl.enableVertexAttribArray( positionLocation );
-			gl.vertexAttribPointer( positionLocation , 2, gl.FLOAT, false, 0, 0);
-			this.vbo.push(vertices);
-		}
-		
-		// load TEXTURES
-		this.textures = [];
-		let bLoadTextures = canvas.hasAttribute('data-textures');
-		if (bLoadTextures) {
-			let imgList = canvas.getAttribute('data-textures').split(',');
-			for (let nImg in imgList) {
-				this.setTexture("u_tex"+nImg,imgList[nImg]);
-			}
-		}
+void main() {
+    gl_Position = vec4(a_position, 0.0, 1.0);
+    v_texcoord = a_texcoord;
+}
+`;
+        this.fragmentString = options.fragmentString ||`
+#ifdef GL_ES
+precision mediump float;
+#endif
 
-		this.setMouse({x: 0, y: 0});
-		this.render(true);
-	};
+varying vec2 v_texcoord;
 
-	load(fragString, vertString) {
+void main(){
+    gl_FragColor = vec4(0.0);
+}
+`;
 
-		// Load default vertex shader if no one is pass
-		if (!vertString) {
-			vertString = "\n\
-precision mediump float;\n\
-uniform vec2 u_resolution;\n\
-uniform float u_time;\n\
-attribute vec2 a_position;\n\
-attribute vec2 a_texcoord;\n\
-varying vec2 v_texcoord;\n\
-void main() {\n\
- 	gl_Position = vec4(a_position, 0.0, 1.0);\n\
- 	v_texcoord = a_texcoord;\n\
- }";
-		}
+        // GL Context
+        let gl = setupWebGL(canvas, options);
+        if (!gl) {
+            return;
+        }
+        this.gl = gl;
+        this.timeLoad = Date.now();
+        this.forceRender = true;
 
-		// Load default fragment shader if no one is pass
-		if (!fragString) {
-			fragString += "\n\
-uniform vec2 u_resolution;\n\
-uniform float u_time;\n\
-varying vec2 v_texcoord;\n\
-void main(){\n\
-	vec2 st = gl_FragCoord.xy/u_resolution;\n\
-	gl_FragColor = vec4(st.x,st.y,abs(sin(u_time)),1.0);\n\
-}";
-		}
+        // Allow alpha
+        canvas.style.backgroundColor = options.backgroundColor || 'rgba(1,1,1,0)';
 
-		this.vertexString = vertString;
-		this.fragmentString = fragString;
+        // Load shader
+        if (canvas.hasAttribute('data-fragment')) {
+            this.fragmentString = canvas.getAttribute('data-fragment');
+        }
+        else if (canvas.hasAttribute('data-fragment-url')) {
+            let source = canvas.getAttribute('data-fragment-url');
+            xhr.get(source, (error, response, body) => {
+                this.load(body,this.vertexString);
+            });
+        }
 
-		this.animated = false;
-		let nTimes = (fragString.match(/u_time/g) || []).length;
-		let nMouse = (fragString.match(/u_mouse/g) || []).length;
-		this.animated = nTimes > 1 || nMouse > 1;
+        // Load shader
+        if (canvas.hasAttribute('data-vertex')) {
+            this.vertexString = canvas.getAttribute('data-vertex');
+        }
+        else if (canvas.hasAttribute('data-vertex-url')) {
+            let source = canvas.getAttribute('data-vertex-url');
+            xhr.get(source, (error, response, body) => {
+                this.load(this.fragmentString,body);
+            });
+        }
 
-		let vertexShader = createShader(this.gl, vertString, this.gl.VERTEX_SHADER);
-		let fragmentShader = createShader(this.gl, fragString, this.gl.FRAGMENT_SHADER);
+        this.load();
 
-		// If Fragment shader fails load a empty one to sign the error
-		if (!fragmentShader) {
-			fragmentShader = createShader(this.gl, "void main(){\n\tgl_FragColor = vec4(1.0);\n}", this.gl.FRAGMENT_SHADER);
-			this.isValid = false;
-		} else {
-			this.isValid = true;
-		}
+        if (!this.program) {
+            return;
+        }
 
-		// Create and use program
-		let program = createProgram(this.gl, [vertexShader, fragmentShader]);
-		this.gl.useProgram(program);
+        // Define Vertex buffer
+        let texCoordsLoc = gl.getAttribLocation(this.program, 'a_texcoord');
+        this.vbo.texCoords = gl.createBuffer();
+        this.gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo.texCoords);
+        this.gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0]), gl.STATIC_DRAW);
+        this.gl.enableVertexAttribArray(texCoordsLoc);
+        this.gl.vertexAttribPointer(texCoordsLoc, 2, gl.FLOAT, false, 0, 0);
 
-		// Delete shaders
-		// this.gl.detachShader(program, vertexShader);
-		// this.gl.detachShader(program, fragmentShader);
-		this.gl.deleteShader(vertexShader);
-		this.gl.deleteShader(fragmentShader);
+        let verticesLoc = gl.getAttribLocation(this.program, 'a_position');
+        this.vbo.vertices = gl.createBuffer();
+        this.gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo.vertices);
+        this.gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0]), gl.STATIC_DRAW);
+        this.gl.enableVertexAttribArray(verticesLoc);
+        this.gl.vertexAttribPointer(verticesLoc, 2, gl.FLOAT, false, 0, 0);
 
-		this.program = program;
+        // load TEXTURES
+        this.textures = {};
+        if (canvas.hasAttribute('data-textures')) {
+            let imgList = canvas.getAttribute('data-textures').split(',');
+            for (let nImg in imgList) {
+                this.setUniform('u_tex' + nImg, imgList[nImg]);
+            }
+        }
 
-		if (this.vbo){
-			this.render(true);
-		}
-	};
+        // ========================== EVENTS
+        let mouse = {x: 0, y: 0};
+        document.addEventListener('mousemove', (e) => { 
+            mouse.x = e.clientX || e.pageX; 
+            mouse.y = e.clientY || e.pageY 
+        }, false);
 
-	render(forceRender) {
+        let sandbox = this;
+        function RenderLoop() {
+            sandbox.setMouse(mouse);
+            sandbox.render();
+            sandbox.forceRender = sandbox.resize();
+            window.requestAnimationFrame(RenderLoop);
+        }
 
-		if ((forceRender !== undefined && forceRender) || 
-			(this.animated && isCanvasVisible(this.canvas))) {
+        // Start
+        this.setMouse({ x: 0, y: 0 });
+        RenderLoop();
+        return this;
+    }
 
-			// set the time uniform
-			let timeFrame = Date.now();
-			let time = (timeFrame-this.timeLoad) / 1000.0;
-			let timeLocation = this.gl.getUniformLocation(this.program, "u_time");
-			this.gl.uniform1f(timeLocation, time);
+    destroy() {
+        this.animated = false;
+        this.isValid = false;
+        for (let tex in this.textures) {
+            this.gl.deleteTexture(tex);
+        }
+        this.textures = {};
+        for (let att in this.attribs) {
+            this.gl.deleteBuffer(this.attribs[att]);
+        }
+        this.gl.useProgram(null);
+        this.gl.deleteProgram(this.program);
+        this.program = null;
+        this.gl = null;
+    }
 
-			// set the resolution uniform
-			let resolutionLocation = this.gl.getUniformLocation(this.program, "u_resolution");
-			this.gl.uniform2f(resolutionLocation, this.canvas.width, this.canvas.height);
+    load(fragString, vertString) {
+        // Load vertex shader if there is one
+        if (vertString) {
+            this.vertexString = vertString;
+        }
 
-			for (let i = 0; i < this.textures.length; ++i){
+        // Load fragment shader if there is one
+        if (fragString) {
+            this.fragmentString = fragString;
+        }
 
-				this.gl.uniform1i( this.gl.getUniformLocation( this.program, this.textures[i].name), i);
-				this.gl.uniform2f( this.gl.getUniformLocation( this.program, this.textures[i].name+"Resolution"), 
-										 this.textures[i].image.width,
-										 this.textures[i].image.height);
+        this.animated = false;
+        let nTimes = (this.fragmentString.match(/u_time/g) || []).length;
+        let nMouse = (this.fragmentString.match(/u_mouse/g) || []).length;
+        this.animated = nTimes > 1 || nMouse > 1;
 
-				this.gl.activeTexture(this.gl.TEXTURE0+i);
-				this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[i]);
-				
-			}
+        let vertexShader = createShader(this, this.vertexString, this.gl.VERTEX_SHADER);
+        let fragmentShader = createShader(this, this.fragmentString, this.gl.FRAGMENT_SHADER);
 
-			// Draw the rectangle.
-			this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-			// console.log("Render " + time);
-		}
-	};
+        // If Fragment shader fails load a empty one to sign the error
+        if (!fragmentShader) {
+            fragmentShader = createShader(this, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', this.gl.FRAGMENT_SHADER);
+            this.isValid = false;
+        }
+        else {
+            this.isValid = true;
+        }
 
-	setMouse(mouse) {
-		// set the mouse uniform
-		let rect = this.canvas.getBoundingClientRect();
-		if (mouse &&
-			mouse.x >= rect.left && 
-			mouse.x <= rect.right && 
-			mouse.y >= rect.top &&
-			mouse.y <= rect.bottom) {
+        // Create and use program
+        let program = createProgram(this, [vertexShader, fragmentShader]);//, [0,1],['a_texcoord','a_position']);
+        this.gl.useProgram(program);
 
-			this.gl.uniform2f(	this.gl.getUniformLocation(this.program, "u_mouse"),
-								mouse.x-rect.left,this.canvas.height-(mouse.y-rect.top));
-		}
-	};
+        // Delete shaders
+        // this.gl.detachShader(program, vertexShader);
+        // this.gl.detachShader(program, fragmentShader);
+        this.gl.deleteShader(vertexShader);
+        this.gl.deleteShader(fragmentShader);
 
-	setUniform(name,value) {
+        this.program = program;
+        this.change = true;
 
-	}
+        // Trigger event
+        this.trigger('load', {});
 
-	setTexture(name,url) {
-		let tex = this.gl.createTexture();
+        this.forceRender = true;
+    }
 
-		this.gl.bindTexture(this.gl.TEXTURE_2D, tex);
-		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 0, 255])); // red
+    loadTexture(name, url_element_or_data, options) {
+        if (!options) {
+            options = {};
+        }
 
-		tex.image = new Image();
-		tex.image.onload = function(glsl_canvas, _tex){
-			return function() {
-				loadTexture(glsl_canvas.gl, _tex); 
-				glsl_canvas.render(true);
-			};
-		}(this,tex);
-		tex.name = name;
-		tex.image.src = url;
+        if (typeof url_element_or_data === 'string') {
+            options.url = url_element_or_data;
+        }
+        else if (typeof url_element_or_data === 'object' && url_element_or_data.data && url_element_or_data.width && url_element_or_data.height) {
+            options.data = url_element_or_data.data;
+            options.width = url_element_or_data.width;
+            options.height = url_element_or_data.height;
+        }
+        else if (typeof url_element_or_data === 'object') {
+            options.element = url_element_or_data;
+        }
+        this.textures[name] = new Texture(this.gl, name, options);
+        this.textures[name].on('loaded', (args) => {
+            this.forceRender = true;
+        })
+    }
 
-		this.textures.push(tex);
-	}
+    refreshUniforms() {
+        this.uniforms = {};
+    }
 
-	version() {
-		return "0.0.1";
-	};
-};
+    setUniform(name, ...value) {
+        let u = {};
+        u[name] = value;
+        this.setUniforms(u);
+    }
+
+    setUniforms(uniforms) {
+        let parsed = parseUniforms(uniforms);
+        // Set each uniform
+        for (let u in parsed) {
+            if (parsed[u].type === 'sampler2D') {
+                // For textures, we need to track texture units, so we have a special setter
+                this.uniformTexture(parsed[u].name, parsed[u].value[0]);
+            }
+            else {
+                this.uniform(parsed[u].method, parsed[u].type, parsed[u].name, parsed[u].value);
+                this.forceRender = true;
+            }
+        }
+    }
+
+    setMouse(mouse) {
+        // set the mouse uniform
+        let rect = this.canvas.getBoundingClientRect();
+        if (mouse &&
+            mouse.x && mouse.x >= rect.left && mouse.x <= rect.right &&
+            mouse.y && mouse.y >= rect.top && mouse.y <= rect.bottom) {
+            this.uniform('2f', 'vec2', 'u_mouse', mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
+        }
+    }
+
+	// ex: program.uniform('3f', 'position', x, y, z);
+    uniform (method, type, name, ...value) { // 'value' is a method-appropriate arguments list
+        this.uniforms[name] = this.uniforms[name] || {};
+        let uniform = this.uniforms[name];
+        let change = isDiff(uniform.value, value);
+        if (change || this.change || uniform.location === undefined || uniform.value === undefined) {
+            uniform.name = name;
+            uniform.value = value;
+            uniform.type = type;
+            uniform.method = 'uniform' + method;
+            uniform.location = this.gl.getUniformLocation(this.program, name);
+
+            this.gl[uniform.method].apply(this.gl, [uniform.location].concat(uniform.value));
+        }
+    }
+
+    uniformTexture(name, texture, options) {
+        if (this.textures[name] === undefined) {
+            this.loadTexture(name, texture, options);
+        }
+        else {
+            this.uniform('1i', 'sampler2D', name, this.texureIndex);
+            this.textures[name].bind(this.texureIndex);
+            this.uniform('2f', 'vec2', name + 'Resolution', this.textures[name].width, this.textures[name].height);
+            this.texureIndex++;
+        }
+    }
+
+    resize() {
+        if (this.width !== this.canvas.clientWidth ||
+            this.height !== this.canvas.clientHeight) {
+            let realToCSSPixels = window.devicePixelRatio || 1;
+
+            // Lookup the size the browser is displaying the canvas in CSS pixels
+            // and compute a size needed to make our drawingbuffer match it in
+            // device pixels.
+            let displayWidth = Math.floor(this.gl.canvas.clientWidth * realToCSSPixels);
+            let displayHeight = Math.floor(this.gl.canvas.clientHeight * realToCSSPixels);
+
+            // Check if the canvas is not the same size.
+            if (this.gl.canvas.width !== displayWidth ||
+                this.gl.canvas.height !== displayHeight) {
+                // Make the canvas the same size
+                this.gl.canvas.width = displayWidth;
+                this.gl.canvas.height = displayHeight;
+                // Set the viewport to match
+                this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+                // this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
+                
+            }
+            this.width = this.canvas.clientWidth;
+            this.height = this.canvas.clientHeight;
+            return true;
+        }
+        else {
+            return false
+        }
+    }
+
+    render () {
+        this.visible = isCanvasVisible(this.canvas);
+        if (this.forceRender ||
+            (this.animated && this.visible)) {
+            // set the time uniform
+            let timeFrame = Date.now();
+            let time = (timeFrame - this.timeLoad) / 1000.0;
+            this.uniform('1f', 'float', 'u_time', time);
+
+            // set the resolution uniform
+            this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
+
+            this.texureIndex = 0;
+            for (let tex in this.textures) {
+                this.uniformTexture(tex);
+            }
+
+            // Draw the rectangle.
+            this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+            
+            // Trigger event
+            this.trigger('render', {});
+
+            this.change = false;
+            this.forceRender = false;
+        }
+    }
+
+    version() {
+        return '0.0.3';
+    }
+}
 
 window.GlslCanvas = GlslCanvas;
+
+function loadAllGlslCanvas() {
+    var list = document.getElementsByClassName("glslCanvas");
+    if (list.length>0) {
+        window.glslCanvases = [];
+        for(var i = 0; i < list.length; i++){
+            var sandbox = new GlslCanvas(list[i]);
+            if (sandbox.isValid) {
+                window.glslCanvases.push(sandbox);
+            }
+        }
+    }
+}
+
+window.onload = function () { 
+    loadAllGlslCanvas();
+};

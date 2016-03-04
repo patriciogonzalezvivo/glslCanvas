@@ -4,8 +4,7 @@
 		<meta charset="utf-8">
 		<title>GlslCanvas</title>
 
-		<!-- // <script type="text/javascript" src="/build/GlslCanvas.min.js"></script> -->
-		<script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/build/GlslCanvas.min.js"></script>
+		<script type="text/javascript" src="/build/GlslCanvas.min.js"></script>
 
 
 		<style>
@@ -13,19 +12,20 @@
 				background: #101515;
 			}
 
-			#canvas {
+			.glslCanvas {
 			    position: absolute;
 			    top: 50%;
 			    left: 50%;
 			    margin-top: -250px;
 			    margin-left: -250px;
 			}​
-
 		</style>
 
 	</head>
 	<body>
-		<a href="http://patriciogonzalezvivo.com"><canvas id="canvas" data-fragment-url="data/moon.frag" data-textures="data/moon.jpg" width="500" height="500"></canvas></a>
+		<a href="http://patriciogonzalezvivo.com">
+			<canvas class="glslCanvas" data-fragment-url="data/moon.frag" data-textures="data/moon.jpg" width="500" height="500"></canvas>
+		</a>
 
 		<a href="https://github.com/patriciogonzalezvivo/glslCanvas">
 			<div class="title" style="color: white; position: absolute; top: 75%; left: 50%; margin-left: -150px; font-family: Baskerville, serif; font-size: 80px; font-style: italic; text-decoration: none; line-height: 0.0;">
@@ -33,55 +33,12 @@
 				<p style="font-size: 27px; font-style: normal;">by Patricio Gonzalez Vivo</p>
 			</div>
 		</a>
-
-		<script type="text/javascript">
-		// Keep track of the mouse
-		var mouse = {x: 0, y: 0};
-		document.addEventListener('mousemove', function(e){ 
-		    mouse.x = e.clientX || e.pageX; 
-		    mouse.y = e.clientY || e.pageY 
-		}, false);
-
-		/**
-		 * Provides requestAnimationFrame in a cross browser way.
-		 */
-		window.requestAnimFrame = (function() {
-			return	window.requestAnimationFrame ||
-			    	window.webkitRequestAnimationFrame ||
-			    	window.mozRequestAnimationFrame ||
-			    	window.oRequestAnimationFrame ||
-			    	window.msRequestAnimationFrame ||
-			    	function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
-			        	return window.setTimeout(callback, 1000/60);
-			     };
-		})();
-
-		var billboards = []; 
-		function load_all_GlslCanvas() {
-			var list = document.getElementsByTagName("canvas");
-
-			// Load shaders on canvas
-			for(var i = 0; i < list.length; i++){
-				var sandbox = new GlslCanvas(list[i]);
-				if (sandbox.isValid) {
-					sandbox.loadTexture("u_logo","data/logo.jpg");
-					billboards.push(sandbox);
-				}
-			}
-		}
-
-		function render_all_GlslCanvas(){
-			for(var i = 0; i < billboards.length; i++){
-				billboards[i].setMouse(mouse);
-				billboards[i].render();
-			}
-			window.requestAnimFrame(render_all_GlslCanvas);
-		}
-
-		window.onload = function () { 
-			load_all_GlslCanvas();
-			render_all_GlslCanvas(); 
-		};
-		</script>
 	</body>
+
+	<script>
+		setTimeout(function(){
+			console.log('Load the tree logo after a while');
+			glslCanvases[0].setUniform("u_logo","data/logo.jpg");
+		}, 5000);
+	</script>
 </html>
