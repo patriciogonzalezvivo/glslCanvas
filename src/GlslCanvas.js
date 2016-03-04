@@ -364,7 +364,7 @@ void main(){
     }
 
     version() {
-        return '0.0.2';
+        return '0.0.3';
     }
 }
 
