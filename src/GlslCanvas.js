@@ -35,6 +35,11 @@ export default class GlslCanvas {
 
         options = options || {};
 
+        this.width = canvas.clientWidth;
+        this.height = canvas.clientHeight;
+
+        console.log("original size", this.width, this.height);
+
         this.canvas = canvas;
         this.gl = undefined;
         this.program = undefined;
@@ -138,10 +143,6 @@ void main(){
         this.render(true);
 
         // ========================== EVENTS
-        //
-        this.canvas.addEventListener('resize', this.onResize);
-        // this.canvas.onresize= this.onResize;
-
         let mouse = {x: 0, y: 0};
         document.addEventListener('mousemove', (e) => { 
             mouse.x = e.clientX || e.pageX; 
@@ -152,19 +153,9 @@ void main(){
         let sandbox = this;
         function RenderLoop() {
             sandbox.setMouse(mouse);
-            sandbox.render();
+            sandbox.render(sandbox.resize());
             window.requestAnimationFrame(RenderLoop);
         }
-
-        // if (canvas.hasAttribute('width')) {
-        //     this.canvas.style.width = canvas.getAttribute('width');
-        //     this.onResize();
-        // }
-
-        // if (canvas.hasAttribute('height')) {
-        //     this.canvas.style.height = canvas.getAttribute('height');
-        //     this.onResize();
-        // }
 
         RenderLoop();
     }
@@ -314,23 +305,35 @@ void main(){
         }
     }
 
-    onResize() {
-        let realToCSSPixels = window.devicePixelRatio || 1;
+    resize() {
+        
+        if (this.width !== this.canvas.clientWidth ||
+            this.height !== this.canvas.clientHeight) {
+            let realToCSSPixels = window.devicePixelRatio || 1;
 
-        // Lookup the size the browser is displaying the canvas in CSS pixels
-        // and compute a size needed to make our drawingbuffer match it in
-        // device pixels.
-        let displayWidth = Math.floor(this.gl.canvas.clientWidth * realToCSSPixels);
-        let displayHeight = Math.floor(this.gl.canvas.clientHeight * realToCSSPixels);
+            // Lookup the size the browser is displaying the canvas in CSS pixels
+            // and compute a size needed to make our drawingbuffer match it in
+            // device pixels.
+            let displayWidth = Math.floor(this.gl.canvas.clientWidth * realToCSSPixels);
+            let displayHeight = Math.floor(this.gl.canvas.clientHeight * realToCSSPixels);
 
-        // Check if the canvas is not the same size.
-        if (this.gl.canvas.width !== displayWidth ||
-            this.gl.canvas.height !== displayHeight) {
-            // Make the canvas the same size
-            this.gl.canvas.width = displayWidth;
-            this.gl.canvas.height = displayHeight;
-            // Set the viewport to match
-            this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+            // Check if the canvas is not the same size.
+            if (this.gl.canvas.width !== displayWidth ||
+                this.gl.canvas.height !== displayHeight) {
+                // Make the canvas the same size
+                this.gl.canvas.width = displayWidth;
+                this.gl.canvas.height = displayHeight;
+                // Set the viewport to match
+                // this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+                this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
+                
+            }
+            this.width = this.canvas.clientWidth;
+            this.height = this.canvas.clientHeight;
+            return true;
+        }
+        else {
+            return false
         }
     }
 
