@@ -38,8 +38,6 @@ export default class GlslCanvas {
         this.width = canvas.clientWidth;
         this.height = canvas.clientHeight;
 
-        console.log("original size", this.width, this.height);
-
         this.canvas = canvas;
         this.gl = undefined;
         this.program = undefined;
