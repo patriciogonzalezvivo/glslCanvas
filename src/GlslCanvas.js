@@ -156,15 +156,15 @@ void main(){
             window.requestAnimationFrame(RenderLoop);
         }
 
-        if (canvas.hasAttribute('width')) {
-            this.canvas.style.width = canvas.getAttribute('width');
-            this.onResize();
-        }
+        // if (canvas.hasAttribute('width')) {
+        //     this.canvas.style.width = canvas.getAttribute('width');
+        //     this.onResize();
+        // }
 
-        if (canvas.hasAttribute('height')) {
-            this.canvas.style.height = canvas.getAttribute('height');
-            this.onResize();
-        }
+        // if (canvas.hasAttribute('height')) {
+        //     this.canvas.style.height = canvas.getAttribute('height');
+        //     this.onResize();
+        // }
 
         RenderLoop();
     }
