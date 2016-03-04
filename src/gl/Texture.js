@@ -1,9 +1,12 @@
 // Texture management
 import { isPowerOf2 } from '../tools/common';
+import { subscribeMixin } from '../tools/mixin';
 
 // GL texture wrapper object for keeping track of a global set of textures, keyed by a unique user-defined name
 export default class Texture {
     constructor(gl, name, options = {}) {
+        subscribeMixin(this);
+
         this.gl = gl;
         this.texture = gl.createTexture();
         if (this.texture) {
@@ -15,11 +18,11 @@ export default class Texture {
         this.source = null;
         this.source_type = null;
         this.loading = null;    // a Promise object to track the loading state of this texture
-        this.filtering = options.filtering || 'linear';
 
         // Default to a 1-pixel black texture so we can safely render while we wait for an image to load
         // See: http://stackoverflow.com/questions/19722247/webgl-wait-for-texture-to-load
-        this.setData(1, 1, new Uint8Array([0, 0, 0, 255]), { filtering: this.filtering || 'linear' });
+        this.setData(1, 1, new Uint8Array([0, 0, 0, 255]), { filtering: 'linear' });
+        this.setFiltering(options.filtering);
 
         this.load(options);
     }
@@ -163,16 +166,18 @@ export default class Texture {
         else if (this.source_type === 'data') {
             this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.width, this.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.source);
         }
+        this.trigger('loaded',this);
     }
 
     // Determines appropriate filtering mode
-    setFiltering(options = {}) {
-
+    setFiltering (options = {}) {
         if (!this.valid) {
             return;
         }
 
-        options.filtering = options.filtering || 'linear';
+        this.power_of_2 = isPowerOf2(this.width) && isPowerOf2(this.height);
+        let defualtFilter = (this.power_of_2? 'mipmap' : 'linear');
+        this.filtering = options.filtering || defualtFilter;
 
         var gl = this.gl;
         this.bind();
@@ -181,24 +186,20 @@ export default class Texture {
         // mipmap: linear blend from nearest mip
         // linear: linear blend from original image (no mips)
         // nearest: nearest pixel from original image (no mips, 'blocky' look)
-        if (isPowerOf2(this.width) && isPowerOf2(this.height)) {
-            this.power_of_2 = true;
+        if (this.power_of_2) {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, options.TEXTURE_WRAP_S || (options.repeat && gl.REPEAT) || gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, options.TEXTURE_WRAP_T || (options.repeat && gl.REPEAT) || gl.CLAMP_TO_EDGE);
 
-            if (options.filtering === 'mipmap') {
-                this.filtering = 'mipmap';
+            if (this.filtering === 'mipmap') {
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); // TODO: use trilinear filtering by defualt instead?
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
                 gl.generateMipmap(gl.TEXTURE_2D);
             }
-            else if (options.filtering === 'linear') {
-                this.filtering = 'linear';
+            else if (this.filtering === 'linear') {
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             }
-            else if (options.filtering === 'nearest') {
-                this.filtering = 'nearest';
+            else if (this.filtering === 'nearest') {
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
             }
@@ -206,17 +207,18 @@ export default class Texture {
         else {
             // WebGL has strict requirements on non-power-of-2 textures:
             // No mipmaps and must clamp to edge
-            this.power_of_2 = false;
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-            if (options.filtering === 'nearest') {
-                this.filtering = 'nearest';
+            if (this.filtering === 'mipmap') {
+                this.filtering = 'linear';
+            }
+
+            if (this.filtering === 'nearest') {
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
             }
             else { // default to linear for non-power-of-2 textures
-                this.filtering = 'linear';
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             }

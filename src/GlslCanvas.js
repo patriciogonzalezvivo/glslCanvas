@@ -79,6 +79,7 @@ void main(){
         }
         this.gl = gl;
         this.timeLoad = Date.now();
+        this.forceRender = true;
 
         // Allow alpha
         canvas.style.backgroundColor = options.backgroundColor || 'rgba(1,1,1,0)';
@@ -128,17 +129,12 @@ void main(){
 
         // load TEXTURES
         this.textures = {};
-        let bLoadTextures = canvas.hasAttribute('data-textures');
-        if (bLoadTextures) {
+        if (canvas.hasAttribute('data-textures')) {
             let imgList = canvas.getAttribute('data-textures').split(',');
             for (let nImg in imgList) {
-                this.loadTexture('u_tex' + nImg, imgList[nImg]);
+                this.setUniform('u_tex' + nImg, imgList[nImg]);
             }
         }
-
-        // Start
-        this.setMouse({ x: 0, y: 0 });
-        this.render(true);
 
         // ========================== EVENTS
         let mouse = {x: 0, y: 0};
@@ -147,15 +143,18 @@ void main(){
             mouse.y = e.clientY || e.pageY 
         }, false);
 
-
         let sandbox = this;
         function RenderLoop() {
             sandbox.setMouse(mouse);
-            sandbox.render(sandbox.resize());
+            sandbox.render();
+            sandbox.forceRender = sandbox.resize();
             window.requestAnimationFrame(RenderLoop);
         }
 
+        // Start
+        this.setMouse({ x: 0, y: 0 });
         RenderLoop();
+        return this;
     }
 
     destroy() {
@@ -218,7 +217,7 @@ void main(){
         // Trigger event
         this.trigger('load', {});
 
-        this.render(true);
+        this.forceRender = true;
     }
 
     loadTexture(name, url_element_or_data, options) {
@@ -238,6 +237,9 @@ void main(){
             options.element = url_element_or_data;
         }
         this.textures[name] = new Texture(this.gl, name, options);
+        this.textures[name].on('loaded', (args) => {
+            this.forceRender = true;
+        })
     }
 
     refreshUniforms() {
@@ -256,13 +258,23 @@ void main(){
         for (let u in parsed) {
             if (parsed[u].type === 'sampler2D') {
                 // For textures, we need to track texture units, so we have a special setter
-                this.setTextureUniform(parsed[u].name, parsed[u].value[0]);
+                this.uniformTexture(parsed[u].name, parsed[u].value[0]);
             }
             else {
                 this.uniform(parsed[u].method, parsed[u].type, parsed[u].name, parsed[u].value);
+                this.forceRender = true;
             }
         }
-        this.render(true);
+    }
+
+    setMouse(mouse) {
+        // set the mouse uniform
+        let rect = this.canvas.getBoundingClientRect();
+        if (mouse &&
+            mouse.x && mouse.x >= rect.left && mouse.x <= rect.right &&
+            mouse.y && mouse.y >= rect.top && mouse.y <= rect.bottom) {
+            this.uniform('2f', 'vec2', 'u_mouse', mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
+        }
     }
 
 	// ex: program.uniform('3f', 'position', x, y, z);
@@ -281,7 +293,7 @@ void main(){
         }
     }
 
-    setTextureUniform(name, texture, options) {
+    uniformTexture(name, texture, options) {
         if (this.textures[name] === undefined) {
             this.loadTexture(name, texture, options);
         }
@@ -293,18 +305,7 @@ void main(){
         }
     }
 
-    setMouse(mouse) {
-        // set the mouse uniform
-        let rect = this.canvas.getBoundingClientRect();
-        if (mouse &&
-            mouse.x && mouse.x >= rect.left && mouse.x <= rect.right &&
-            mouse.y && mouse.y >= rect.top && mouse.y <= rect.bottom) {
-            this.uniform('2f', 'vec2', 'u_mouse', mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
-        }
-    }
-
     resize() {
-        
         if (this.width !== this.canvas.clientWidth ||
             this.height !== this.canvas.clientHeight) {
             let realToCSSPixels = window.devicePixelRatio || 1;
@@ -322,8 +323,8 @@ void main(){
                 this.gl.canvas.width = displayWidth;
                 this.gl.canvas.height = displayHeight;
                 // Set the viewport to match
-                // this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
-                this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
+                this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+                // this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
                 
             }
             this.width = this.canvas.clientWidth;
@@ -335,9 +336,10 @@ void main(){
         }
     }
 
-    render(forceRender) {
-        if ((forceRender !== undefined && forceRender) ||
-            (this.animated && isCanvasVisible(this.canvas))) {
+    render () {
+        this.visible = isCanvasVisible(this.canvas);
+        if (this.forceRender ||
+            (this.animated && this.visible)) {
             // set the time uniform
             let timeFrame = Date.now();
             let time = (timeFrame - this.timeLoad) / 1000.0;
@@ -348,7 +350,7 @@ void main(){
 
             this.texureIndex = 0;
             for (let tex in this.textures) {
-                this.setTextureUniform(tex);
+                this.uniformTexture(tex);
             }
 
             // Draw the rectangle.
@@ -358,6 +360,7 @@ void main(){
             this.trigger('render', {});
 
             this.change = false;
+            this.forceRender = false;
         }
     }
 
