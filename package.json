@@ -1,7 +1,7 @@
 {
   "name": "glslCanvas",
   "version": "0.0.3",
-  "description": "Simple GLSL Fragment Shader Sandbox ",
+  "description": "Simple GLSL Fragment Shader Sandbox",
   "main": "index.js",
   "scripts": {
     "postinstall": "ln -nsf ../src/js node_modules/app",
@@ -19,7 +19,10 @@
     "fragment",
     "browser"
   ],
-  "author": "Patricio Gonzalez Vivo",
+  "author": {
+    "name": "Patricio Gonzalez Vivo",
+    "url": "http://patriciogonzalezvivo.com"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/patriciogonzalezvivo/glslCanvas/issues"
