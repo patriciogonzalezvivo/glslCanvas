@@ -80,7 +80,7 @@ sandbox.setUniform("u_texture","data/texture.jpg");
 
 ### Quick start demo
 
-In the [```index.html```](index.html) file, you will find handy example code to start.
+In the [```index.html```](https://github.com/patriciogonzalezvivo/glslCanvas/blob/gh-pages/index.html) file, you will find handy example code to start.
 
 [Demo page: patriciogonzalezvivo.github.io/glslCanvas/](http://patriciogonzalezvivo.github.io/glslCanvas/)
 
