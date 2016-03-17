@@ -277,7 +277,7 @@ void main(){
         }
     }
 
-    // ex: program.uniform('3f', 'position', x, y, z);
+	// ex: program.uniform('3f', 'position', x, y, z);
     uniform (method, type, name, ...value) { // 'value' is a method-appropriate arguments list
         this.uniforms[name] = this.uniforms[name] || {};
         let uniform = this.uniforms[name];
@@ -306,18 +306,15 @@ void main(){
     }
 
     resize() {
-        let realToCSSPixels = window.devicePixelRatio || 1;
-
-        // Lookup the size the browser is displaying the canvas in CSS pixels
-        // and compute a size needed to make our drawingbuffer match it in
-        // device pixels.
-        let displayWidth = Math.floor(this.gl.canvas.clientWidth * realToCSSPixels);
-        let displayHeight = Math.floor(this.gl.canvas.clientHeight * realToCSSPixels);
-        
         if (this.width !== this.canvas.clientWidth ||
-            this.height !== this.canvas.clientHeight ||
-            this.gl.canvas.width !== displayWidth ||
-            this.gl.canvas.height !== displayHeight) {
+            this.height !== this.canvas.clientHeight) {
+            let realToCSSPixels = window.devicePixelRatio || 1;
+
+            // Lookup the size the browser is displaying the canvas in CSS pixels
+            // and compute a size needed to make our drawingbuffer match it in
+            // device pixels.
+            let displayWidth = Math.floor(this.gl.canvas.clientWidth * realToCSSPixels);
+            let displayHeight = Math.floor(this.gl.canvas.clientHeight * realToCSSPixels);
 
             // Check if the canvas is not the same size.
             if (this.gl.canvas.width !== displayWidth ||
