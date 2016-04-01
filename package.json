@@ -2,9 +2,8 @@
   "name": "glslCanvas",
   "version": "0.0.3",
   "description": "Simple GLSL Fragment Shader Sandbox",
-  "main": "index.js",
+  "main": "build/GlslCanvas.min.js",
   "scripts": {
-    "postinstall": "ln -nsf ../src/js node_modules/app",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "jshint *.js src/ || true; jscs *.js src/ || true"
   },
