@@ -70,6 +70,7 @@
         var sandbox_content = "";
         var sandbox_title = "";
         var sandbox_author = "";
+        var sandbox_thumbnail = ""; 
         canvas.style.width = '100%';
         canvas.style.height = '100%';
 
@@ -99,18 +100,24 @@
                     sandbox_content = content;
                     sandbox.load(content);
 
-                    var title = setTitle();
-                    var author = setAuthor();
-                    console.log(title, author);
+                    var title = addTitle();
+                    var author = addAuthor();
                     if ( title === "unknown" && author === "unknown") {
                         document.getElementById("credits").style.visibility = "hidden";
                     } else {
                         document.getElementById("credits").style.visibility = "visible";
                     }
+
+                    addMeta({
+                                'title' : title + ' by ' + author,
+                                'type' : 'website',
+                                'url': window.location.href,
+                                'image': sandbox_thumbnail
+                            })                 
                 })
         }
 
-        function setTitle() {
+        function addTitle() {
             var result = sandbox_content.match(/\/\/\s*[T|t]itle\s*:\s*([\w|\s|\@|\(|\)|\-|\_]*)/i);
             if (result && !(result[1] === ' ' || result[1] === '')) {
                 sandbox_title = result[1].replace(/(\r\n|\n|\r)/gm, '');
@@ -122,20 +129,29 @@
             }
         }
 
-        function setAuthor() {
+        function addAuthor() {
             var result = sandbox_content.match(/\/\/\s*[A|a]uthor\s*[\:]?\s*([\w|\s|\@|\(|\)|\-|\_]*)/i);
             if (result && !(result[1] === ' ' || result[1] === '')) {
                 sandbox_author = result[1].replace(/(\r\n|\n|\r)/gm, '');
                 document.getElementById("author").innerHTML = sandbox_author;
-                return author;
+                return sandbox_author;
             }
             else {
                 return "unknown";
             }
         }
 
+        function addMeta(obj) {
+            for (var key in obj) {
+                var meta = document.createElement('meta');
+                meta.setAttribute('og:'+key, obj[key]);
+                document.getElementsByTagName('head')[0].appendChild(meta);
+            }              
+        }
+
         var query = parseQuery(window.location.search.slice(1));
         if (query && query.log) {
+            sandbox_thumbnail = 'http://thebookofshaders.com/log/' + query.log + '.png';
             load('http://thebookofshaders.com/log/' + query.log + '.frag');
         }
 
