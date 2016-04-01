@@ -56,7 +56,7 @@
 
     </head>
     <body>
-        <canvas id="glslCanvas" width="800" height="600"> </canvas>
+        <canvas id="glslCanvas" data-fragment-url="data/moon.frag" width="800" height="600"> </canvas>
         <div id="credits">
             <p class="label" id="title"></p>
             <p class="label" id="author"></p>
@@ -160,8 +160,7 @@
             }
         }
 
-        if (sandbox_content === "" && texCounter === 0) {
-            load("data/moon.frag")
+        if (texCounter === 0) {
             sandbox.setUniform("u_tex0","data/moon.jpg");
             sandbox.setUniform("u_logo","data/logo.jpg");
         }
