@@ -1,44 +1,93 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<title>GlslCanvas</title>
+    <head>
+        <meta charset="utf-8">
+        <title>GlslCanvas</title>
 
-		<script type="text/javascript" src="/build/GlslCanvas.min.js"></script>
+        <script type="text/javascript" src="src/GlslCanvas.min.js"></script>
+        <script type="text/javascript" src="src/fetch.js"></script>
 
+        <style>
+            body {
+                background: #101515;
+            }
 
-		<style>
-			body {
-				background: #101515;
-			}
+            #glslCanvas {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%,-50%);
+            }​
+        </style>
 
-			.glslCanvas {
-			    position: absolute;
-			    top: 50%;
-			    left: 50%;
-			    margin-top: -250px;
-			    margin-left: -250px;
-			}​
-		</style>
+    </head>
+    <body>
+        <canvas id="glslCanvas" data-fragment-url="data/moon.frag" data-textures="data/moon.jpg" width="800" height="600"></canvas>
+    </body>
 
-	</head>
-	<body>
-		<a href="http://patriciogonzalezvivo.com">
-			<canvas class="glslCanvas" data-fragment-url="data/moon.frag" data-textures="data/moon.jpg" width="500" height="500"></canvas>
-		</a>
+    <script>
+        function parseQuery (qstr) {
+            var query = {};
+            var a = qstr.split('&');
+            for (var i in a) {
+                var b = a[i].split('=');
+                query[decodeURIComponent(b[0])] = decodeURIComponent(b[1]);
+            }
+            return query;
+        }
 
-		<a href="https://github.com/patriciogonzalezvivo/glslCanvas">
-			<div class="title" style="color: white; position: absolute; top: 75%; left: 50%; margin-left: -150px; font-family: Baskerville, serif; font-size: 80px; font-style: italic; text-decoration: none; line-height: 0.0;">
-				<p>glslCanvas</p>
-				<p style="font-size: 27px; font-style: normal;">by Patricio Gonzalez Vivo</p>
-			</div>
-		</a>
-	</body>
+        function load(url) {
+            // Make the request and wait for the reply
+            fetch(url)
+                .then(function (response) {
+                    // If we get a positive response...
+                    if (response.status !== 200) {
+                        console.log('Error getting shader. Status code: ' + response.status);
+                        return;
+                    }
+                    // console.log(response);
+                    return response.text();
+                })
+                .then(function(content) {
+                    sandbox.load(content);
+                })
+        }
 
-	<script>
-		setTimeout(function(){
-			console.log('Load the tree logo after a while');
-			glslCanvases[0].setUniform("u_logo","data/logo.jpg");
-		}, 5000);
-	</script>
+        var canvas = document.getElementById("glslCanvas");
+        var sandbox = new GlslCanvas(canvas);
+        var texCounter = 0;
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+
+        var query = parseQuery(window.location.search.slice(1));
+        if (query && query.log) {
+            load('http://thebookofshaders.com/log/' + query.log + '.frag');
+        }
+
+        if (window.location.hash !== '') {
+            var hashes = location.hash.split('&');
+            for (var i in hashes) {
+                var ext = hashes[i].substr(hashes[i].lastIndexOf('.') + 1);
+                var path = hashes[i];
+
+                // Extract hash if is present
+                if (path.search('#') === 0) {
+                    path = path.substr(1);
+                }
+
+                if (ext === 'frag') {
+                    load(path);
+                }
+                else if (ext === 'png' || ext === 'jpg' || ext === 'PNG' || ext === 'JPG') {
+                    sandbox.setUniform("u_tex"+texCounter.toString(), path);
+                    texCounter++;
+                }
+            }
+        }
+
+        if (texCounter === 0) {
+            sandbox.setUniform("u_logo","data/logo.jpg");
+        }
+        
+    </script>
 </html>

@@ -59,6 +59,15 @@ vec4 sphereTexture(in sampler2D _tex, in vec2 _uv) {
 
 void main(){
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
+    st = (st-.5)*1.0+.5;
+    if (u_resolution.y > u_resolution.x ) {
+        st.y *= u_resolution.y/u_resolution.x;
+        st.y -= (u_resolution.y*.5-u_resolution.x*.5)/u_resolution.x;
+    } else {
+        st.x *= u_resolution.x/u_resolution.y;
+        st.x -= (u_resolution.x*.5-u_resolution.y*.5)/u_resolution.y;
+    }
+
     vec4 color = vec4(1.0);
   
     color *= sphereTexture(u_tex0, st);
