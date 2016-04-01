@@ -1,5 +1,4 @@
-// Author @patriciogv - 2015
-// http://patriciogonzalezvivo.com
+// Author: Patricio Gonzalez Vivo
 
 #ifdef GL_ES
 precision mediump float;

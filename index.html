@@ -18,14 +18,61 @@
                 left: 50%;
                 transform: translate(-50%,-50%);
             }​
+
+            .blank {
+
+            }
+
+            #credits {
+                position: absolute; 
+                bottom: 10px; 
+                right: 15px; 
+                text-align: right;
+                background: rgba(0,0,0,.5);
+                padding: 12px;
+                padding-top: 5px;
+                padding-bottom: 5px;
+                margin: 0px
+            }
+
+            .label {
+                color: white;
+                font-family: Helvetica, Arial, sans-serif;
+                text-decoration: none; 
+                line-height: 0.0;
+            }
+
+            #title {
+                font-size: 24px;
+                font-weight: 600;
+            }
+
+            #author {
+                font-size: 14px; 
+                font-style: italic;
+                font-weight: 100;
+            }
         </style>
 
     </head>
     <body>
-        <canvas id="glslCanvas" data-fragment-url="data/moon.frag" data-textures="data/moon.jpg" width="800" height="600"></canvas>
+        <canvas id="glslCanvas" width="800" height="600"> </canvas>
+        <div id="credits">
+            <p class="label" id="title"></p>
+            <p class="label" id="author"></p>
+        </div>
     </body>
 
     <script>
+        var canvas = document.getElementById("glslCanvas");
+        var sandbox = new GlslCanvas(canvas);
+        var texCounter = 0;
+        var sandbox_content = "";
+        var sandbox_title = "";
+        var sandbox_author = "";
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+
         function parseQuery (qstr) {
             var query = {};
             var a = qstr.split('&');
@@ -49,15 +96,43 @@
                     return response.text();
                 })
                 .then(function(content) {
+                    sandbox_content = content;
                     sandbox.load(content);
+
+                    var title = setTitle();
+                    var author = setAuthor();
+                    console.log(title, author);
+                    if ( title === "unknown" && author === "unknown") {
+                        document.getElementById("credits").style.visibility = "hidden";
+                    } else {
+                        document.getElementById("credits").style.visibility = "visible";
+                    }
                 })
         }
 
-        var canvas = document.getElementById("glslCanvas");
-        var sandbox = new GlslCanvas(canvas);
-        var texCounter = 0;
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
+        function setTitle() {
+            var result = sandbox_content.match(/\/\/\s*[T|t]itle\s*:\s*([\w|\s|\@|\(|\)|\-|\_]*)/i);
+            if (result && !(result[1] === ' ' || result[1] === '')) {
+                sandbox_title = result[1].replace(/(\r\n|\n|\r)/gm, '');
+                var title_el = document.getElementById("title").innerHTML = sandbox_title;
+                return sandbox_title;
+            }
+            else {
+                return "unknown";
+            }
+        }
+
+        function setAuthor() {
+            var result = sandbox_content.match(/\/\/\s*[A|a]uthor\s*[\:]?\s*([\w|\s|\@|\(|\)|\-|\_]*)/i);
+            if (result && !(result[1] === ' ' || result[1] === '')) {
+                sandbox_author = result[1].replace(/(\r\n|\n|\r)/gm, '');
+                document.getElementById("author").innerHTML = sandbox_author;
+                return author;
+            }
+            else {
+                return "unknown";
+            }
+        }
 
         var query = parseQuery(window.location.search.slice(1));
         if (query && query.log) {
@@ -85,9 +160,11 @@
             }
         }
 
-        if (texCounter === 0) {
+        if (sandbox_content === "" && texCounter === 0) {
+            load("data/moon.frag")
+            sandbox.setUniform("u_tex0","data/moon.jpg");
             sandbox.setUniform("u_logo","data/logo.jpg");
         }
-        
+
     </script>
 </html>
