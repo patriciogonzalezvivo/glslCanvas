@@ -1,6 +1,6 @@
 {
   "name": "glslCanvas",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Simple GLSL Fragment Shader Sandbox",
   "main": "build/GlslCanvas.min.js",
   "scripts": {
@@ -48,6 +48,5 @@
     "babel-runtime": "5.8.29",
     "xhr": "^2.2.0"
   },
-  "browserify-shim": {
-  }
+  "browserify-shim": {}
 }
