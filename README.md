@@ -1,5 +1,7 @@
 [GlslCanvas](https://github.com/patriciogonzalezvivo/glslCanvas) is JavaScript Library that helps you easily load GLSL Fragment and Vertex Shaders into an HTML canvas. I have used this in my [Book of Shaders](http://thebookofshaders.com) and [glslEditor](http://editor.thebookofshaders.com).
 
+[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=4BQMKQJDQ9XH6)
+
 ## How to use it?
 
 There are different ways to do this. But first, make sure you are loading the latest version of ```GlslCanvas.min.js``` on your page by adding this line to your HTML:
