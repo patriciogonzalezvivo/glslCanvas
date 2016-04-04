@@ -9,6 +9,12 @@ There are different ways to do this. But first, make sure you are loading the la
 <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/build/GlslCanvas.min.js"></script>
 ```
 
+or if you are using npm package manager on your console do:
+
+```bash
+npm install glslCanvas
+```
+
 ### The easy way
 
 Make a canvas element in your HTML, make sure the class name is ```glslCanvas``` and to assign a shader to it, trought a url using the attribute ```data-fragment-url``` or directly writing your code inside the ```data-fragment``` attribute.
