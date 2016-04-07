@@ -166,8 +166,8 @@ export function parseUniforms(uniforms, prefix = null) {
             parsed.push({
                 type: 'float',
                 method: '1f',
-                name, value:
-                uniform
+                name,
+                value: uniform
             });
         }
         // Array: vector, array of floats, array of textures, or array of structs
@@ -175,7 +175,16 @@ export function parseUniforms(uniforms, prefix = null) {
             // Numeric values
             if (typeof uniform[0] === 'number') {
                 // float vectors (vec2, vec3, vec4)
-                if (uniform.length >= 2 && uniform.length <= 4) {
+                if (uniform.length === 1) {
+                    parsed.push({
+                        type: 'float',
+                        method: '1f',
+                        name,
+                        value: uniform
+                    });
+                }
+                // float vectors (vec2, vec3, vec4)
+                else if (uniform.length >= 2 && uniform.length <= 4) {
                     parsed.push({
                         type: 'vec' + uniform.length,
                         method: uniform.length + 'fv',
