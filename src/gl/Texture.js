@@ -16,8 +16,8 @@ export default class Texture {
 
         this.name = name;
         this.source = null;
-        this.source_type = null;
-        this.loading = null;    // a Promise object to track the loading state of this texture
+        this.sourceType = null;
+        this.loading = null; // a Promise object to track the loading state of this texture
 
         // Default to a 1-pixel black texture so we can safely render while we wait for an image to load
         // See: http://stackoverflow.com/questions/19722247/webgl-wait-for-texture-to-load
@@ -60,9 +60,11 @@ export default class Texture {
 
         if (typeof options.url === 'string') {
             this.setUrl(options.url, options);
-        } else if (options.element) {
+        }
+        else if (options.element) {
             this.setElement(options.element, options);
-        } else if (options.data && options.width && options.height) {
+        }
+        else if (options.data && options.width && options.height) {
             this.setData(options.width, options.height, options.data, options);
         }
     }
@@ -75,7 +77,7 @@ export default class Texture {
 
         this.url = url; // save URL reference (will be overwritten when element is loaded below)
         this.source = this.url;
-        this.source_type = 'url';
+        this.sourceType = 'url';
 
         this.loading = new Promise((resolve, reject) => {
             let image = new Image();
@@ -106,7 +108,7 @@ export default class Texture {
         this.height = height;
 
         this.source = data;
-        this.source_type = 'data';
+        this.sourceType = 'data';
 
         this.update(options);
         this.setFiltering(options);
@@ -128,7 +130,7 @@ export default class Texture {
             element instanceof HTMLImageElement ||
             element instanceof HTMLVideoElement) {
             this.source = element;
-            this.source_type = 'element';
+            this.sourceType = 'element';
 
             this.update(options);
             this.setFiltering(options);
@@ -154,19 +156,18 @@ export default class Texture {
         this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, options.UNPACK_PREMULTIPLY_ALPHA_WEBGL || false);
 
         // Image or Canvas element
-        if (this.source_type === 'element' &&
+        if (this.sourceType === 'element' &&
             (this.source instanceof HTMLCanvasElement || this.source instanceof HTMLVideoElement ||
-             (this.source instanceof HTMLImageElement && this.source.complete))) {
-
+                (this.source instanceof HTMLImageElement && this.source.complete))) {
             this.width = this.source.width;
             this.height = this.source.height;
             this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.source);
         }
         // Raw image buffer
-        else if (this.source_type === 'data') {
+        else if (this.sourceType === 'data') {
             this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.width, this.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.source);
         }
-        this.trigger('loaded',this);
+        this.trigger('loaded', this);
     }
 
     // Determines appropriate filtering mode
@@ -175,8 +176,8 @@ export default class Texture {
             return;
         }
 
-        this.power_of_2 = isPowerOf2(this.width) && isPowerOf2(this.height);
-        let defualtFilter = (this.power_of_2? 'mipmap' : 'linear');
+        this.powerOf2 = isPowerOf2(this.width) && isPowerOf2(this.height);
+        let defualtFilter = (this.powerOf2 ? 'mipmap' : 'linear');
         this.filtering = options.filtering || defualtFilter;
 
         var gl = this.gl;
@@ -186,7 +187,7 @@ export default class Texture {
         // mipmap: linear blend from nearest mip
         // linear: linear blend from original image (no mips)
         // nearest: nearest pixel from original image (no mips, 'blocky' look)
-        if (this.power_of_2) {
+        if (this.powerOf2) {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, options.TEXTURE_WRAP_S || (options.repeat && gl.REPEAT) || gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, options.TEXTURE_WRAP_T || (options.repeat && gl.REPEAT) || gl.CLAMP_TO_EDGE);
 

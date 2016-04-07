@@ -3,13 +3,13 @@ export function subscribeMixin (target) {
 
     return Object.assign(target, {
 
-        on (type, f) {
+        on(type, f) {
             let listener = {};
             listener[type] = f;
             listeners.add(listener);
         },
 
-        off (type, f) {
+        off(type, f) {
             if (f) {
                 let listener = {};
                 listener[type] = f;
@@ -23,14 +23,14 @@ export function subscribeMixin (target) {
                             return;
                         }
                     }
-                } 
+                }
             }
         },
 
-        listSubscriptions () {
+        listSubscriptions() {
             for (let item of listeners) {
                 console.log(item);
-            } 
+            }
         },
 
         subscribe(listener) {

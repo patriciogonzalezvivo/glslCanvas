@@ -44,7 +44,7 @@ export default class GlslCanvas {
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
-        
+
         this.vertexString = options.vertexString || `
 #ifdef GL_ES
 precision mediump float;
@@ -60,7 +60,7 @@ void main() {
     v_texcoord = a_texcoord;
 }
 `;
-        this.fragmentString = options.fragmentString ||`
+        this.fragmentString = options.fragmentString || `
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -91,7 +91,7 @@ void main(){
         else if (canvas.hasAttribute('data-fragment-url')) {
             let source = canvas.getAttribute('data-fragment-url');
             xhr.get(source, (error, response, body) => {
-                this.load(body,this.vertexString);
+                this.load(body, this.vertexString);
             });
         }
 
@@ -102,7 +102,7 @@ void main(){
         else if (canvas.hasAttribute('data-vertex-url')) {
             let source = canvas.getAttribute('data-vertex-url');
             xhr.get(source, (error, response, body) => {
-                this.load(this.fragmentString,body);
+                this.load(this.fragmentString, body);
             });
         }
 
@@ -137,10 +137,13 @@ void main(){
         }
 
         // ========================== EVENTS
-        let mouse = {x: 0, y: 0};
-        document.addEventListener('mousemove', (e) => { 
-            mouse.x = e.clientX || e.pageX; 
-            mouse.y = e.clientY || e.pageY 
+        let mouse = {
+            x: 0,
+            y: 0
+        };
+        document.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX || e.pageX;
+            mouse.y = e.clientY || e.pageY;
         }, false);
 
         let sandbox = this;
@@ -220,26 +223,26 @@ void main(){
         this.forceRender = true;
     }
 
-    loadTexture(name, url_element_or_data, options) {
+    loadTexture (name, urlElementOrData, options) {
         if (!options) {
             options = {};
         }
 
-        if (typeof url_element_or_data === 'string') {
-            options.url = url_element_or_data;
+        if (typeof urlElementOrData === 'string') {
+            options.url = urlElementOrData;
         }
-        else if (typeof url_element_or_data === 'object' && url_element_or_data.data && url_element_or_data.width && url_element_or_data.height) {
-            options.data = url_element_or_data.data;
-            options.width = url_element_or_data.width;
-            options.height = url_element_or_data.height;
+        else if (typeof urlElementOrData === 'object' && urlElementOrData.data && urlElementOrData.width && urlElementOrData.height) {
+            options.data = urlElementOrData.data;
+            options.width = urlElementOrData.width;
+            options.height = urlElementOrData.height;
         }
-        else if (typeof url_element_or_data === 'object') {
-            options.element = url_element_or_data;
+        else if (typeof urlElementOrData === 'object') {
+            options.element = urlElementOrData;
         }
         this.textures[name] = new Texture(this.gl, name, options);
         this.textures[name].on('loaded', (args) => {
             this.forceRender = true;
-        })
+        });
     }
 
     refreshUniforms() {
@@ -325,14 +328,13 @@ void main(){
                 // Set the viewport to match
                 this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
                 // this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
-                
             }
             this.width = this.canvas.clientWidth;
             this.height = this.canvas.clientHeight;
             return true;
         }
         else {
-            return false
+            return false;
         }
     }
 
@@ -355,7 +357,7 @@ void main(){
 
             // Draw the rectangle.
             this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-            
+
             // Trigger event
             this.trigger('render', {});
 
@@ -372,10 +374,10 @@ void main(){
 window.GlslCanvas = GlslCanvas;
 
 function loadAllGlslCanvas() {
-    var list = document.getElementsByClassName("glslCanvas");
-    if (list.length>0) {
+    var list = document.getElementsByClassName('glslCanvas');
+    if (list.length > 0) {
         window.glslCanvases = [];
-        for(var i = 0; i < list.length; i++){
+        for (var i = 0; i < list.length; i++) {
             var sandbox = new GlslCanvas(list[i]);
             if (sandbox.isValid) {
                 window.glslCanvases.push(sandbox);
@@ -384,6 +386,6 @@ function loadAllGlslCanvas() {
     }
 }
 
-window.onload = function () { 
+window.onload = function () {
     loadAllGlslCanvas();
 };

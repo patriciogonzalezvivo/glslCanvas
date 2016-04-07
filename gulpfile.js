@@ -3,7 +3,6 @@
 var gulp = require('gulp');
 var livereload = require('gulp-livereload');
 var plumber = require('gulp-plumber');
-var sourcemaps = require('gulp-sourcemaps');
 
 var paths = {
     scripts: 'src/**/*.js'
