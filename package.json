@@ -2,7 +2,7 @@
   "name": "glslCanvas",
   "version": "0.0.8",
   "description": "Simple GLSL Fragment Shader Sandbox",
-  "main": "build/GlslCanvas.min.js",
+  "main": "build/GlslCanvas.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "jshint *.js src/ || true; jscs *.js src/ || true"

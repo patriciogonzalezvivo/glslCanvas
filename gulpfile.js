@@ -29,7 +29,7 @@ gulp.task('js', function () {
 
     return bundle.bundle()
         .pipe(plumber())
-        .pipe(source('GlslCanvas.min.js'))
+        .pipe(source('GlslCanvas.js'))
         .pipe(derequire())
         .pipe(buffer())
         .pipe(gulp.dest('./build'));
