@@ -19,6 +19,7 @@ gulp.task('js', function () {
 
     var bundle = browserify({
         entries: 'src/GlslCanvas.js',
+        standalone: 'GlslCanvas',
         debug: true,
         transform: [
             babelify.configure({ optional: ['runtime'] }),
