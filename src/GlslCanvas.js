@@ -367,7 +367,7 @@ void main(){
     }
 
     version() {
-        return '0.0.3';
+        return '0.0.9';
     }
 }
 
@@ -386,6 +386,6 @@ function loadAllGlslCanvas() {
     }
 }
 
-window.onload = function () {
+window.addEventListener('load', function () {
     loadAllGlslCanvas();
-};
+});
