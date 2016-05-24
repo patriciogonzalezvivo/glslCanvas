@@ -80,6 +80,7 @@ void main(){
         this.gl = gl;
         this.timeLoad = Date.now();
         this.forceRender = true;
+        this.paused = false;
 
         // Allow alpha
         canvas.style.backgroundColor = options.backgroundColor || 'rgba(1,1,1,0)';
@@ -341,7 +342,7 @@ void main(){
     render () {
         this.visible = isCanvasVisible(this.canvas);
         if (this.forceRender ||
-            (this.animated && this.visible)) {
+            (this.animated && this.visible && ! this.paused)) {
             // set the time uniform
             let timeFrame = Date.now();
             let time = (timeFrame - this.timeLoad) / 1000.0;
@@ -364,6 +365,14 @@ void main(){
             this.change = false;
             this.forceRender = false;
         }
+    }
+
+    pause () {
+        this.paused = true;
+    }
+
+    play () {
+        this.paused = false;
     }
 
     version() {
