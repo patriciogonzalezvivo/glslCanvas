@@ -59,7 +59,9 @@ export default class Texture {
         this.loading = null;
 
         if (typeof options.url === 'string') {
-            this.setUrl(options.url, options);
+            if (this.url === undefined || options.url !== this.url) {
+                this.setUrl(options.url, options);
+            }
         }
         else if (options.element) {
             this.setElement(options.element, options);

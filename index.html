@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <title>GlslCanvas</title>
 
-        <script type="text/javascript" src="build/GlslCanvas.min.js"></script>
+        <script type="text/javascript" src="build/GlslCanvas.js"></script>
         <script type="text/javascript" src="https://cdn.rawgit.com/github/fetch/master/fetch.js"></script>
 
         <style>
@@ -69,10 +69,10 @@ precision mediump float;
 uniform vec2 u_resolution;
 uniform float u_time;
 
-uniform sampler2D u_tex0;
-uniform vec2 u_tex0Resolution;
+uniform sampler2D u_tex0; // data/moon.jpg
+uniform vec2 u_tex0Resolution; 
 
-uniform sampler2D u_logo;
+uniform sampler2D u_logo; // data/logo.jpg
 uniform vec2 u_logoResolution;
 
 float speedMoon = 0.01;
@@ -266,10 +266,10 @@ void main(){
             }
         }
 
-        if (texCounter === 0) {
-            sandbox.setUniform("u_tex0","data/moon.jpg");
-            sandbox.setUniform("u_logo","data/logo.jpg");
-        }
+        // if (texCounter === 0) {
+        //     sandbox.setUniform("u_tex0","data/moon.jpg");
+        //     sandbox.setUniform("u_logo","data/logo.jpg");
+        // }
     </script>
     <script>
         (function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){

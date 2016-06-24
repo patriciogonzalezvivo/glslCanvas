@@ -41,6 +41,7 @@ export default class GlslCanvas {
         this.canvas = canvas;
         this.gl = undefined;
         this.program = undefined;
+        this.textures = {};
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
@@ -129,7 +130,6 @@ void main(){
         this.gl.vertexAttribPointer(verticesLoc, 2, gl.FLOAT, false, 0, 0);
 
         // load TEXTURES
-        this.textures = {};
         if (canvas.hasAttribute('data-textures')) {
             let imgList = canvas.getAttribute('data-textures').split(',');
             for (let nImg in imgList) {
@@ -193,6 +193,29 @@ void main(){
         let nMouse = (this.fragmentString.match(/u_mouse/g) || []).length;
         this.animated = nTimes > 1 || nMouse > 1;
 
+        let nTextures = this.fragmentString.search(/sampler2D/g);
+        if (nTextures) {
+            console.log('Check for textures');
+            let lines = this.fragmentString.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+                let match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|.]*)/i);
+                if (match) {
+                    let ext = match[2].split('.').pop();
+                    if (match[1] &&  match[2] && 
+                        (ext === 'jpg' || ext === 'JPG' ||
+                         ext === 'jpeg' || ext === 'JPEG' ||
+                         ext === 'png' || ext === 'PNG')) {
+                        console.log('Set texture',match[1],match[2]);
+                        this.setUniform(match[1], match[2]);
+                    }
+                }
+                let main = lines[i].match(/\s*void\s*main\s*/g);
+                if (main) {
+                    break;
+                }
+            }
+        }
+
         let vertexShader = createShader(this, this.vertexString, this.gl.VERTEX_SHADER);
         let fragmentShader = createShader(this, this.fragmentString, this.gl.FRAGMENT_SHADER);
 
@@ -240,10 +263,22 @@ void main(){
         else if (typeof urlElementOrData === 'object') {
             options.element = urlElementOrData;
         }
-        this.textures[name] = new Texture(this.gl, name, options);
-        this.textures[name].on('loaded', (args) => {
-            this.forceRender = true;
-        });
+
+        if (this.textures[name]) {
+            if (this.textures[name]) {
+                this.textures[name].load(options);
+                this.textures[name].on('loaded', (args) => {
+                    this.forceRender = true;
+                });
+            }
+        }
+        else {
+            this.textures[name] = new Texture(this.gl, name, options);
+            this.textures[name].on('loaded', (args) => {
+                this.forceRender = true;
+            });
+        }
+        
     }
 
     refreshUniforms() {
@@ -262,7 +297,8 @@ void main(){
         for (let u in parsed) {
             if (parsed[u].type === 'sampler2D') {
                 // For textures, we need to track texture units, so we have a special setter
-                this.uniformTexture(parsed[u].name, parsed[u].value[0]);
+                // this.uniformTexture(parsed[u].name, parsed[u].value[0]);
+                this.loadTexture(parsed[u].name, parsed[u].value[0]);
             }
             else {
                 this.uniform(parsed[u].method, parsed[u].type, parsed[u].name, parsed[u].value);
@@ -376,7 +412,7 @@ void main(){
     }
 
     version() {
-        return '0.0.10';
+        return '0.0.11';
     }
 }
 
