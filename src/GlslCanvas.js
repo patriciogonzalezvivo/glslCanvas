@@ -195,7 +195,6 @@ void main(){
 
         let nTextures = this.fragmentString.search(/sampler2D/g);
         if (nTextures) {
-            console.log('Check for textures');
             let lines = this.fragmentString.split('\n');
             for (let i = 0; i < lines.length; i++) {
                 let match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|.]*)/i);
@@ -205,7 +204,6 @@ void main(){
                         (ext === 'jpg' || ext === 'JPG' ||
                          ext === 'jpeg' || ext === 'JPEG' ||
                          ext === 'png' || ext === 'PNG')) {
-                        console.log('Set texture',match[1],match[2]);
                         this.setUniform(match[1], match[2]);
                     }
                 }
