@@ -197,7 +197,7 @@ void main(){
         if (nTextures) {
             let lines = this.fragmentString.split('\n');
             for (let i = 0; i < lines.length; i++) {
-                let match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|.]*)/i);
+                let match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
                 if (match) {
                     let ext = match[2].split('.').pop();
                     if (match[1] &&  match[2] && 
