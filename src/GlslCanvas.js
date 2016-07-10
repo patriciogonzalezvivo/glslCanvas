@@ -396,7 +396,7 @@ void main(){
 
             if (this.nDate) {
                 // Set date uniform: year/month/day/time_in_sec
-                this.uniform('4f', 'float', 'u_date', date.getFullYear(), date.getMonth(), date.getDate(), date.getHours()*3600 + date.getMinutes()*60 + date.getSeconds());
+                this.uniform('4f', 'float', 'u_date', date.getFullYear(), date.getMonth(), date.getDate(), date.getHours()*3600 + date.getMinutes()*60 + date.getSeconds() + date.getMilliseconds() * 0.001 );
             }
 
             // set the resolution uniform
@@ -427,7 +427,7 @@ void main(){
     }
 
     version() {
-        return '0.0.15';
+        return '0.0.16';
     }
 }
 
