@@ -79,7 +79,7 @@ void main(){
             return;
         }
         this.gl = gl;
-        this.timeLoad = Date.now();
+        this.timeLoad = this.timePrev = Date.now();
         this.forceRender = true;
         this.paused = false;
 
@@ -191,6 +191,7 @@ void main(){
         }
 
         this.animated = false;
+        this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
         this.nTime = (this.fragmentString.match(/u_time/g) || []).length;
         this.nDate = (this.fragmentString.match(/u_date/g) || []).length;
         this.nMouse = (this.fragmentString.match(/u_mouse/g) || []).length;
@@ -381,19 +382,23 @@ void main(){
         if (this.forceRender ||
             (this.animated && this.visible && ! this.paused)) {
 
+            let date = new Date();
+            let now = date.getTime();
+            if (this.nDelta > 1) {
+                this.uniform('1f', 'float', 'u_time', (now - this.timePrev) / 1000.0);
+                this.timePrev = now;
+            }
+
             if (this.nTime > 1 ) {
                 // set the time uniform
-                let timeFrame = Date.now();
-                let time = (timeFrame - this.timeLoad) / 1000.0;
-                this.uniform('1f', 'float', 'u_time', time);
+                this.uniform('1f', 'float', 'u_time', (now - this.timeLoad) / 1000.0);
             }
-            
+
             if (this.nDate) {
-                // Set date uniform
-                let date = new Date();
-                this.uniform('4f', 'float', 'u_date', date.getFullYear(), date.getMonth(), date.getDate(), time.getTime() / 1000);
+                // Set date uniform: year/month/day/time_in_sec
+                this.uniform('4f', 'float', 'u_date', date.getFullYear(), date.getMonth(), date.getDate(), time.getHours()*3600 + time.getMinutes()*60 + time.getSeconds());
             }
-            
+
             // set the resolution uniform
             this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
 
