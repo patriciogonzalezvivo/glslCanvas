@@ -396,7 +396,7 @@ void main(){
 
             if (this.nDate) {
                 // Set date uniform: year/month/day/time_in_sec
-                this.uniform('4f', 'float', 'u_date', date.getFullYear(), date.getMonth(), date.getDate(), time.getHours()*3600 + time.getMinutes()*60 + time.getSeconds());
+                this.uniform('4f', 'float', 'u_date', date.getFullYear(), date.getMonth(), date.getDate(), date.getHours()*3600 + date.getMinutes()*60 + date.getSeconds());
             }
 
             // set the resolution uniform
