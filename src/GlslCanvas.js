@@ -149,7 +149,9 @@ void main(){
 
         let sandbox = this;
         function RenderLoop() {
-            sandbox.setMouse(mouse);
+            if (sandbox.nMouse > 1) {
+                sandbox.setMouse(mouse);
+            }
             sandbox.render();
             sandbox.forceRender = sandbox.resize();
             window.requestAnimationFrame(RenderLoop);
@@ -189,9 +191,10 @@ void main(){
         }
 
         this.animated = false;
-        let nTimes = (this.fragmentString.match(/u_time/g) || []).length;
-        let nMouse = (this.fragmentString.match(/u_mouse/g) || []).length;
-        this.animated = nTimes > 1 || nMouse > 1;
+        this.nTime = (this.fragmentString.match(/u_time/g) || []).length;
+        this.nDate = (this.fragmentString.match(/u_date/g) || []).length;
+        this.nMouse = (this.fragmentString.match(/u_mouse/g) || []).length;
+        this.animated = this.nDate > 1 || this.nTime > 1 || this.nMouse > 1;
 
         let nTextures = this.fragmentString.search(/sampler2D/g);
         if (nTextures) {
@@ -377,11 +380,20 @@ void main(){
         this.visible = isCanvasVisible(this.canvas);
         if (this.forceRender ||
             (this.animated && this.visible && ! this.paused)) {
-            // set the time uniform
-            let timeFrame = Date.now();
-            let time = (timeFrame - this.timeLoad) / 1000.0;
-            this.uniform('1f', 'float', 'u_time', time);
 
+            if (this.nTime > 1 ) {
+                // set the time uniform
+                let timeFrame = Date.now();
+                let time = (timeFrame - this.timeLoad) / 1000.0;
+                this.uniform('1f', 'float', 'u_time', time);
+            }
+            
+            if (this.nDate) {
+                // Set date uniform
+                let date = new Date();
+                this.uniform('4f', 'float', 'u_date', date.getFullYear(), date.getMonth(), date.getDate(), time.getTime() / 1000);
+            }
+            
             // set the resolution uniform
             this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
 
