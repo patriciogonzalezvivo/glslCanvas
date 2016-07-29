@@ -4,7 +4,7 @@
 
 ## How to use it?
 
-There are different ways to do this. But first, make sure you are loading the latest version of ```GlslCanvas.min.js``` on your page by adding this line to your HTML:
+There are different ways to do this. But first, make sure you are loading the latest version of ```GlslCanvas.js``` on your page by adding this line to your HTML:
 ```html
 <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/build/GlslCanvas.js"></script>
 ```
