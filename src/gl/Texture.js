@@ -1,5 +1,5 @@
 // Texture management
-import { isPowerOf2 } from '../tools/common';
+import { isPowerOf2, isSafari } from '../tools/common';
 import { subscribeMixin } from '../tools/mixin';
 
 // GL texture wrapper object for keeping track of a global set of textures, keyed by a unique user-defined name
@@ -98,7 +98,13 @@ export default class Texture {
                 console.log(`Texture '${this.name}': failed to load url: '${this.source}'`, e, options);
                 resolve(this);
             };
-            image.crossOrigin = 'anonymous';
+
+            // Safari has a bug loading data-URL images with CORS enabled, so it must be disabled in that case
+            // https://bugs.webkit.org/show_bug.cgi?id=123978
+            if (!(isSafari() && this.source.slice(0, 5) === 'data:')) {
+                image.crossOrigin = 'anonymous';
+            }
+
             image.src = this.source;
         });
         return this.loading;
