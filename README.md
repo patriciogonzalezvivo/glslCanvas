@@ -17,7 +17,11 @@ npm install glslCanvas
 
 ### The easy way
 
-Make a canvas element in your HTML, make sure the class name is ```glslCanvas``` and to assign a shader to it, through a url using the attribute ```data-fragment-url``` or directly writing your code inside the ```data-fragment``` attribute.
+1. Create a canvas element in your HTML.
+2. Add the class name ```glslCanvas``` to the canvas.
+3. Assign it a shader...
+	* through a url using the attribute ```data-fragment-url```
+	* or directly writing your code inside the ```data-fragment``` attribute
 
 ```html
 <canvas class="glslCanvas" data-fragment-url="shader.frag" width="500" height="500"></canvas>
