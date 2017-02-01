@@ -430,7 +430,7 @@ void main(){
     }
 
     version() {
-        return '0.0.18';
+        return '0.0.19';
     }
 }
 
