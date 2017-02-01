@@ -80,6 +80,7 @@ void main(){
         }
         this.gl = gl;
         this.timeLoad = this.timePrev = Date.now();
+        this.timeDelta = 0.;
         this.forceRender = true;
         this.paused = false;
 
@@ -384,13 +385,15 @@ void main(){
 
             let date = new Date();
             let now = date.getTime();
+            this.timeDelta =  (now - this.timePrev) / 1000.0;
+            this.timePrev = now;
             if (this.nDelta > 1) {
-                this.uniform('1f', 'float', 'u_time', (now - this.timePrev) / 1000.0);
-                this.timePrev = now;
+                // set the delta time uniform
+                this.uniform('1f', 'float', 'u_delta', this.timeDelta);
             }
 
             if (this.nTime > 1 ) {
-                // set the time uniform
+                // set the elapsed time uniform
                 this.uniform('1f', 'float', 'u_time', (now - this.timeLoad) / 1000.0);
             }
 
@@ -427,7 +430,7 @@ void main(){
     }
 
     version() {
-        return '0.0.16';
+        return '0.0.18';
     }
 }
 
