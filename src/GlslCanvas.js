@@ -79,7 +79,7 @@ void main(){
             return;
         }
         this.gl = gl;
-        this.timeLoad = this.timePrev = Date.now();
+        this.timeLoad = this.timePrev = performance.now();
         this.timeDelta = 0.;
         this.forceRender = true;
         this.paused = false;
@@ -384,7 +384,7 @@ void main(){
             (this.animated && this.visible && ! this.paused)) {
 
             let date = new Date();
-            let now = date.getTime();
+            let now = performance.now();
             this.timeDelta =  (now - this.timePrev) / 1000.0;
             this.timePrev = now;
             if (this.nDelta > 1) {
@@ -430,7 +430,7 @@ void main(){
     }
 
     version() {
-        return '0.0.19';
+        return '0.0.20';
     }
 }
 
