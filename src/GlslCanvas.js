@@ -294,8 +294,8 @@ void main(){
                     vert: vertString || sandbox.vertexString,
                     timeElapsedMs: ext.getQueryObjectEXT(query, ext.QUERY_RESULT_EXT)/1000000.0
                 };
-                callback(ret);
                 finishTest();
+                callback(ret);
             } else {
                 window.requestAnimationFrame(waitForTest);
             }
@@ -483,7 +483,7 @@ void main(){
     }
 
     version() {
-        return '0.0.21';
+        return '0.0.22';
     }
 }
 
