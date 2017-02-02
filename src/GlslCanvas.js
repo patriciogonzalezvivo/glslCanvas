@@ -279,7 +279,7 @@ void main(){
             // Revert changes... go back to normal
             sandbox.paused = pre_test_paused;
             if (fragString || vertString) {
-                sandbox.load(pre_test_vert, pre_test_frag);
+                sandbox.load(pre_test_frag, pre_test_vert);
             }
         }
         function waitForTest() {
@@ -483,7 +483,7 @@ void main(){
     }
 
     version() {
-        return '0.0.22';
+        return '0.0.23';
     }
 }
 
