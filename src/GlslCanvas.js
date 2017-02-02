@@ -180,7 +180,7 @@ void main(){
         this.gl = null;
     }
 
-    load(fragString, vertString) {
+    load (fragString, vertString) {
         // Load vertex shader if there is one
         if (vertString) {
             this.vertexString = vertString;
@@ -248,6 +248,59 @@ void main(){
         this.trigger('load', {});
 
         this.forceRender = true;
+    }
+
+    test (callback, fragString, vertString) {
+        // Thanks to @thespite for the help here
+        // https://www.khronos.org/registry/webgl/extensions/EXT_disjoint_timer_query/
+        let pre_test_vert = this.vertexString;
+        let pre_test_frag = this.fragmentString;
+        let pre_test_paused = this.paused;
+
+        let ext = this.gl.getExtension('EXT_disjoint_timer_query');
+        let query = ext.createQueryEXT();
+        let wasValid = this.isValid;
+
+        if (fragString || vertString) {
+            this.load(fragString, vertString);
+            wasValid = this.isValid;
+            this.forceRender = true;
+            this.render();
+        }
+
+        this.paused = true;
+        ext.beginQueryEXT(ext.TIME_ELAPSED_EXT, query);
+        this.forceRender = true;
+        this.render();
+        ext.endQueryEXT(ext.TIME_ELAPSED_EXT);
+
+        let sandbox = this;
+        function finishTest() {
+            // Revert changes... go back to normal
+            sandbox.paused = pre_test_paused;
+            if (fragString || vertString) {
+                sandbox.load(pre_test_vert, pre_test_frag);
+            }
+        }
+        function waitForTest() {
+            sandbox.forceRender = true;
+            sandbox.render();
+            let available = ext.getQueryObjectEXT(query, ext.QUERY_RESULT_AVAILABLE_EXT);
+            let disjoint = sandbox.gl.getParameter(ext.GPU_DISJOINT_EXT);
+            if (available && !disjoint) {
+                let ret = {
+                    wasValid: wasValid,
+                    frag: fragString || sandbox.fragmentString,
+                    vert: vertString || sandbox.vertexString,
+                    timeElapsedMs: ext.getQueryObjectEXT(query, ext.QUERY_RESULT_EXT)/1000000.0
+                };
+                callback(ret);
+                finishTest();
+            } else {
+                window.requestAnimationFrame(waitForTest);
+            }
+        }
+        waitForTest();
     }
 
     loadTexture (name, urlElementOrData, options) {
@@ -430,7 +483,7 @@ void main(){
     }
 
     version() {
-        return '0.0.20';
+        return '0.0.21';
     }
 }
 
