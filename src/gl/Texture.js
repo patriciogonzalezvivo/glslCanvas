@@ -88,7 +88,11 @@ export default class Texture {
             let element = undefined
             if (isVideo) {
                 element = document.createElement('video');
-                element.autoplay = 'true';
+                element.autoplay = true;
+                options.filtering = 'nearest';
+                // element.preload = 'auto';
+                // element.style.display = 'none';
+                // document.body.appendChild(element);
             } else {
                 element = new Image();
             }
@@ -116,10 +120,7 @@ export default class Texture {
 
             element.src = this.source;
             if (isVideo) {
-                element.style.display = 'none';
-                document.body.appendChild(element);
                 this.setElement(element, options);
-                element.play();
             }
         });
         return this.loading;
@@ -156,7 +157,6 @@ export default class Texture {
             this.sourceType = 'element';
 
             if (element instanceof HTMLVideoElement) {
-                options.filtering = 'nearest';
                 element.addEventListener('canplaythrough', () => {
                     this.intervalID = setInterval(()=>{
                         this.update(options);
@@ -166,9 +166,9 @@ export default class Texture {
                     element.currentTime = 0;
                     element.play();
                 }, true);
-            }
-
-            this.update(options);
+            } else {
+                this.update(options);
+            }            
             this.setFiltering(options);
         }
         else {
@@ -193,17 +193,16 @@ export default class Texture {
 
         // Image or Canvas element
         if (this.sourceType === 'element' &&
-            (this.source instanceof HTMLCanvasElement || 
-             this.source instanceof HTMLVideoElement ||
+            ((this.source instanceof HTMLCanvasElement) || 
+             (this.source instanceof HTMLVideoElement) ||
              (this.source instanceof HTMLImageElement && this.source.complete))) {
-
             if (this.source instanceof HTMLVideoElement) {
                 this.width = this.source.videoWidth;
                 this.height = this.source.videoHeight;
             } else {
                 this.width = this.source.width;
                 this.height = this.source.height;
-            } 
+            }
             this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.source);
         }
         // Raw image buffer
