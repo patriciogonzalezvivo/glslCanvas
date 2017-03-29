@@ -82,30 +82,45 @@ export default class Texture {
         this.sourceType = 'url';
 
         this.loading = new Promise((resolve, reject) => {
-            let image = new Image();
-            image.onload = () => {
+            let ext = url.split('.').pop().toLowerCase();
+            let isVideo = (ext === 'ogv' || ext === 'webm' || ext === 'mp4');
+
+            let element = undefined
+            if (isVideo) {
+                element = document.createElement('video');
+                element.autoplay = 'true';
+            } else {
+                element = new Image();
+            }
+
+            element.onload = () => {
                 try {
-                    this.setElement(image, options);
+                    this.setElement(element, options);
                 }
                 catch (e) {
                     console.log(`Texture '${this.name}': failed to load url: '${this.source}'`, e, options);
                 }
-
                 resolve(this);
             };
-            image.onerror = e => {
+            element.onerror = e => {
                 // Warn and resolve on error
                 console.log(`Texture '${this.name}': failed to load url: '${this.source}'`, e, options);
                 resolve(this);
             };
 
-            // Safari has a bug loading data-URL images with CORS enabled, so it must be disabled in that case
+            // Safari has a bug loading data-URL elements with CORS enabled, so it must be disabled in that case
             // https://bugs.webkit.org/show_bug.cgi?id=123978
             if (!(isSafari() && this.source.slice(0, 5) === 'data:')) {
-                image.crossOrigin = 'anonymous';
+                element.crossOrigin = 'anonymous';
             }
 
-            image.src = this.source;
+            element.src = this.source;
+            if (isVideo) {
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                this.setElement(element, options);
+                element.play();
+            }
         });
         return this.loading;
     }
@@ -140,6 +155,19 @@ export default class Texture {
             this.source = element;
             this.sourceType = 'element';
 
+            if (element instanceof HTMLVideoElement) {
+                options.filtering = 'nearest';
+                element.addEventListener('canplaythrough', () => {
+                    this.intervalID = setInterval(()=>{
+                        this.update(options);
+                    }, 15);
+                }, true);
+                element.addEventListener('ended', () => {
+                    element.currentTime = 0;
+                    element.play();
+                }, true);
+            }
+
             this.update(options);
             this.setFiltering(options);
         }
@@ -165,10 +193,17 @@ export default class Texture {
 
         // Image or Canvas element
         if (this.sourceType === 'element' &&
-            (this.source instanceof HTMLCanvasElement || this.source instanceof HTMLVideoElement ||
-                (this.source instanceof HTMLImageElement && this.source.complete))) {
-            this.width = this.source.width;
-            this.height = this.source.height;
+            (this.source instanceof HTMLCanvasElement || 
+             this.source instanceof HTMLVideoElement ||
+             (this.source instanceof HTMLImageElement && this.source.complete))) {
+
+            if (this.source instanceof HTMLVideoElement) {
+                this.width = this.source.videoWidth;
+                this.height = this.source.videoHeight;
+            } else {
+                this.width = this.source.width;
+                this.height = this.source.height;
+            } 
             this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.source);
         }
         // Raw image buffer
