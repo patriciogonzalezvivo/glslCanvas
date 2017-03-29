@@ -204,11 +204,10 @@ void main(){
             for (let i = 0; i < lines.length; i++) {
                 let match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
                 if (match) {
-                    let ext = match[2].split('.').pop();
+                    let ext = match[2].split('.').pop().toLowerCase();
                     if (match[1] &&  match[2] && 
-                        (ext === 'jpg' || ext === 'JPG' ||
-                         ext === 'jpeg' || ext === 'JPEG' ||
-                         ext === 'png' || ext === 'PNG')) {
+                        (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || 
+                         ext === 'ogv' || ext === 'webm' || ext === 'mp4')) {
                         this.setUniform(match[1], match[2]);
                     }
                 }
