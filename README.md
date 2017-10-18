@@ -33,8 +33,8 @@ As you can see, in this example we are loading the fragment shader by setting th
 
 * ```data-fragment``` : load a fragment shader by providing the content of the shader as a string
 * ```data-fragment-url``` : load a fragment shader by providing a valid url
-* ```data-vertex``` : load a fragment shader by providing the content of the shader as a string
-* ```data-vertex-url``` : load a fragment shader by providing a valid url
+* ```data-vertex``` : load a vertex shader by providing the content of the shader as a string
+* ```data-vertex-url``` : load a vertex shader by providing a valid url
 * ```data-textures```: add a list of texture urls separated by commas (ex: ```data-textures="texture.jpg,normal_map.png,something.jpg"```). Textures will be assigned in order to ```uniform sampler2D``` variables with names following this style: ```u_tex0```, ```u_tex1```, ```u_tex2```, etc.
 
 All the catched ```.glslCanvas``` element whill be stored in the ```windows.glslCanvases``` array.
