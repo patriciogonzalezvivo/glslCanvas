@@ -382,7 +382,9 @@ void main(){
             uniform.value = value;
             uniform.type = type;
             uniform.method = 'uniform' + method;
-            uniform.location = this.gl.getUniformLocation(this.program, name);
+            if( uniform.location === undefined ) {
+		    uniform.location = this.gl.getUniformLocation(this.program, name);
+	    }
 
             this.gl[uniform.method].apply(this.gl, [uniform.location].concat(uniform.value));
         }
