@@ -150,6 +150,9 @@ void main(){
 
         let sandbox = this;
         function RenderLoop() {
+            if (!sandbox.gl) {
+                return
+            }
             if (sandbox.nMouse > 1) {
                 sandbox.setMouse(mouse);
             }
