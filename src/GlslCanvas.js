@@ -171,7 +171,9 @@ void main(){
         this.animated = false;
         this.isValid = false;
         for (let tex in this.textures) {
-            this.gl.deleteTexture(tex);
+            if (tex.destroy){
+                tex.destroy()
+            }
         }
         this.textures = {};
         for (let att in this.attribs) {
