@@ -23,7 +23,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import xhr from 'xhr';
 
-import { setupWebGL, createShader, createProgram, parseUniforms, loadTexture } from './gl/gl';
+import { setupWebGL, createShader, createProgram, parseUniforms } from './gl/gl';
 import Texture from './gl/Texture';
 
 import { isCanvasVisible, isDiff } from './tools/common';
@@ -150,9 +150,6 @@ void main(){
 
         let sandbox = this;
         function RenderLoop() {
-            if (!sandbox.gl) {
-                return
-            }
             if (sandbox.nMouse > 1) {
                 sandbox.setMouse(mouse);
             }
