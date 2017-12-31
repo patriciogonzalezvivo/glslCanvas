@@ -40,7 +40,7 @@ As you can see, in this example we are loading the fragment shader by setting th
 All the catched ```.glslCanvas``` element whill be stored in the ```windows.glslCanvases``` array.
 
 ### The JS way
- 
+
 Create a ```<canvas>``` element and construct a ```glsCanvas()``` sandbox from it.
 
 ```javascript
@@ -48,7 +48,7 @@ var canvas = document.createElement("canvas");
 var sandbox = new GlslCanvas(canvas);
 ```
 
-In the case you need to reload the 
+In the case you need to reload the
 
 ### Reloading shaders from JS
 
@@ -78,13 +78,13 @@ You can also send your custom uniforms to a shader with ```.setUniform([name],[.
 ```javascript
 
 // Assign .5 to "uniform float u_brightness"
-sandbox.setUniform("u_brightness",.5); 
+sandbox.setUniform("u_brightness",.5);
 
 // Assign (.2,.3) to "uniform vec2 u_position"
 sandbox.setUniform("u_position",.2,.3);
 
 // Assign a red color to "uniform vec3 u_color"
-sandbox.setUniform("u_color",1,0,0); 
+sandbox.setUniform("u_color",1,0,0);
 
 // Load a new texture and assign it to "uniform sampler2D u_texture"
 sandbox.setUniform("u_texture","data/texture.jpg");
@@ -96,25 +96,32 @@ In the [```index.html```](https://github.com/patriciogonzalezvivo/glslCanvas/blo
 
 [Demo page: patriciogonzalezvivo.github.io/glslCanvas/](http://patriciogonzalezvivo.github.io/glslCanvas/)
 
-## Collaborate 
+## Collaborate
 
 If you'd like to contribute to this code, you need to:
 
-* Install [```node``` and ```npm```](https://nodejs.org/download/) 
-* Install gulp globally
-```bash
-npm install
-npm install -g gulp
-```
+* Install [node, npm](https://nodejs.org/download/) and [yarn](http://yarnpkg.com)
+
 * Fork and clone [this repository](https://github.com/patriciogonzalezvivo/glslCanvas)
 ```bash
 git clone https://github.com/patriciogonzalezvivo/glslCanvas.git
 ```
-* "Gulp" while you edit it
+
+* Install dependencies
 ```bash
-cd glslCanvas
-gulp
+yarn
 ```
+
+* Default "gulp" task watches and rebuilds with source maps while you edit
+```bash
+yarn run gulp
+```
+
+* Rebuild the production file and commit
+```bash
+NODE_ENV=production yarn run gulp build
+```
+
 * Push to your local fork and make your pull request
 
 Thank you
