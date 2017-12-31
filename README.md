@@ -100,23 +100,23 @@ In the [```index.html```](https://github.com/patriciogonzalezvivo/glslCanvas/blo
 
 If you'd like to contribute to this code, you need to:
 
-* Install [```node``` and ```npm```](https://nodejs.org/download/) 
-* Install dependencies
-```bash
-npm install
-```
 * Fork and clone [this repository](https://github.com/patriciogonzalezvivo/glslCanvas)
 ```bash
 git clone https://github.com/patriciogonzalezvivo/glslCanvas.git
 cd glslCanvas
 ```
-* While you edit, run rollup in dev mode
+* Install [node, npm](https://nodejs.org/download/) and [yarn](http://yarnpkg.com)
+* Install dependencies
 ```bash
-npm run dev
+yarn
+```
+* Run rollup in dev mode while you edit
+```bash
+yarn run dev
 ```
 * Build for production
 ```bash
-npm run build
+yarn run build
 ```
 * Push to your local fork and make your pull request
 
