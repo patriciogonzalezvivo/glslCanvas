@@ -6,7 +6,7 @@
 
 There are different ways to do this. But first, make sure you are loading the latest version of ```GlslCanvas.js``` on your page by adding this line to your HTML:
 ```html
-<script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/build/GlslCanvas.js"></script>
+<script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
 ```
 
 or if you are using npm package manager on your console do:
@@ -100,20 +100,23 @@ In the [```index.html```](https://github.com/patriciogonzalezvivo/glslCanvas/blo
 
 If you'd like to contribute to this code, you need to:
 
-* Install [```node``` and ```npm```](https://nodejs.org/download/) 
-* Install gulp globally
-```bash
-npm install
-npm install -g gulp
-```
 * Fork and clone [this repository](https://github.com/patriciogonzalezvivo/glslCanvas)
 ```bash
 git clone https://github.com/patriciogonzalezvivo/glslCanvas.git
-```
-* "Gulp" while you edit it
-```bash
 cd glslCanvas
-gulp
+```
+* Install [node, npm](https://nodejs.org/download/) and [yarn](http://yarnpkg.com)
+* Install dependencies
+```bash
+yarn
+```
+* Run rollup in dev mode while you edit
+```bash
+yarn run dev
+```
+* Build for production
+```bash
+yarn run build
 ```
 * Push to your local fork and make your pull request
 

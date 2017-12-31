@@ -1,52 +1,46 @@
 {
-  "name": "glslCanvas",
-  "version": "0.0.25",
-  "description": "Simple GLSL Fragment Shader Sandbox",
-  "main": "build/GlslCanvas.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "jshint *.js src/ || true; jscs *.js src/ || true"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/patriciogonzalezvivo/glslCanvas.git"
-  },
-  "keywords": [
-    "glsl",
-    "shader",
-    "sandbox",
-    "fragment",
-    "browser"
-  ],
-  "author": {
-    "name": "Patricio Gonzalez Vivo",
-    "url": "http://patriciogonzalezvivo.com"
-  },
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/patriciogonzalezvivo/glslCanvas/issues"
-  },
-  "homepage": "https://github.com/patriciogonzalezvivo/glslCanvas#readme",
-  "devDependencies": {
-    "babelify": "^6.4.0",
-    "browserify": "^11.2.0",
-    "browserify-shim": "^3.8.11",
-    "gulp": "^3.9.0",
-    "gulp-derequire": "^2.1.0",
-    "gulp-livereload": "^3.8.1",
-    "gulp-plumber": "^1.0.1",
-    "gulp-uglify": "^1.4.2",
-    "gulp-util": "^3.0.7",
-    "jscs": "^2.4.0",
-    "jshint": "^2.8.0",
-    "modernizr": "^3.1.0",
-    "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
-  },
-  "dependencies": {
-    "babel": "^5.8.29",
-    "babel-runtime": "5.8.29",
-    "xhr": "^2.2.0"
-  },
-  "browserify-shim": {}
+    "name": "glslCanvas",
+    "version": "0.0.26",
+    "description": "Simple GLSL Fragment Shader Sandbox",
+    "main": "lib/GlslCanvas.js",
+    "module": "dist/GlslCanvas.es.js",
+    "jsnext:main": "dist/GlslCanvas.es.js",
+    "scripts": {
+        "build": "rollup -c",
+        "dev": "rollup -c -w",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "lint": "jshint *.js src/ || true; jscs *.js src/ || true"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/patriciogonzalezvivo/glslCanvas.git"
+    },
+    "keywords": ["glsl", "shader", "sandbox", "fragment", "browser"],
+    "author": {
+        "name": "Patricio Gonzalez Vivo",
+        "url": "http://patriciogonzalezvivo.com"
+    },
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/patriciogonzalezvivo/glslCanvas/issues"
+    },
+    "homepage": "https://github.com/patriciogonzalezvivo/glslCanvas#readme",
+    "devDependencies": {
+        "babel": "6.23.0",
+        "babel-core": "^6.26.0",
+        "babel-env": "^2.4.1",
+        "babel-plugin-external-helpers": "^6.22.0",
+        "babelify": "^8.0.0",
+        "rollup": "^0.50.0",
+        "rollup-plugin-babel": "^3.0.2",
+        "rollup-plugin-commonjs": "^8.2.6",
+        "rollup-plugin-node-resolve": "^3.0.0",
+        "rollup-plugin-sizes": "^0.4.0",
+        "rollup-plugin-uglify": "^2.0.1",
+        "uglify-es": "^3.1.6"
+    },
+    "dependencies": {
+        "xhr": "^2.4.0"
+    },
+    "browserify-shim": {}
 }
