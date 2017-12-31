@@ -19,7 +19,7 @@ const plugins = [
     sizes()
 ];
 
-export default [
+const devConfigs = [
     {
         input,
         output: {
@@ -47,6 +47,9 @@ export default [
         },
         plugins
     },
+]
+
+const prodConfigs = [
     {
         input,
         output: {
@@ -58,3 +61,5 @@ export default [
         sourcemap: true
     }
 ];
+
+export default process.env.ROLLUP_WATCH ? devConfigs : devConfigs.concat(prodConfigs)
