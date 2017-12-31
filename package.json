@@ -44,8 +44,8 @@
     "vinyl-source-stream": "^1.1.0"
   },
   "dependencies": {
-    "babel": "^5.8.29",
-    "babel-runtime": "5.8.29",
+    "babel": "^6.23.0",
+    "babel-runtime": "6.26.0",
     "xhr": "^2.2.0"
   },
   "browserify-shim": {}
