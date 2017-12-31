@@ -4,6 +4,7 @@ var gulp = require('gulp');
 var derequire = require('gulp-derequire');
 var livereload = require('gulp-livereload');
 var plumber = require('gulp-plumber');
+let isDev = process.env.NODE_ENV !== 'production'
 
 var paths = {
     scripts: 'src/**/*.js'
@@ -20,10 +21,13 @@ gulp.task('js', function () {
     var bundle = browserify({
         entries: 'src/GlslCanvas.js',
         standalone: 'GlslCanvas',
-        debug: true,
+        debug: isDev,
         transform: [
-            babelify.configure({ optional: ['runtime'] }),
-            shim
+          babelify.configure({
+              presets: ['env'],
+              plugins: ['add-module-exports']
+          }),
+          shim
         ]
     });
 
