@@ -22,7 +22,7 @@ gulp.task('js', function () {
         standalone: 'GlslCanvas',
         debug: true,
         transform: [
-            babelify.configure({ optional: ['runtime'] }),
+            babelify.configure({ presets: ['env'] }),
             shim
         ]
     });
