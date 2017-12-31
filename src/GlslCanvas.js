@@ -210,8 +210,8 @@ void main(){
                 let match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
                 if (match) {
                     let ext = match[2].split('.').pop().toLowerCase();
-                    if (match[1] &&  match[2] && 
-                        (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || 
+                    if (match[1] &&  match[2] &&
+                        (ext === 'jpg' || ext === 'jpeg' || ext === 'png' ||
                          ext === 'ogv' || ext === 'webm' || ext === 'mp4')) {
                         this.setUniform(match[1], match[2]);
                     }
@@ -338,7 +338,7 @@ void main(){
                 this.forceRender = true;
             });
         }
-        
+
     }
 
     refreshUniforms() {
@@ -490,8 +490,6 @@ void main(){
         return '0.0.25';
     }
 }
-
-window.GlslCanvas = GlslCanvas;
 
 function loadAllGlslCanvas() {
     var list = document.getElementsByClassName('glslCanvas');
