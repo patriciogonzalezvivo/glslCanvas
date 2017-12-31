@@ -486,8 +486,6 @@ void main(){
     }
 }
 
-window.GlslCanvas = GlslCanvas;
-
 function loadAllGlslCanvas() {
     var list = document.getElementsByClassName('glslCanvas');
     if (list.length > 0) {
