@@ -1,0 +1,10 @@
+language: node_js
+node_js:
+- node
+cache: yarn
+script:
+- npm run build
+notifications:
+  email:
+    on_success: change
+    on_failure: change
