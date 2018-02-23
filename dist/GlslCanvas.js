@@ -656,7 +656,7 @@ function setupWebGL(canvas, optAttribs, onError) {
 
     function handleError(errorCode, msg) {
         if (typeof onError === 'function') {
-            optAttribs.onError(errorCode);
+            onError(errorCode);
         } else {
             showLink(msg);
         }
