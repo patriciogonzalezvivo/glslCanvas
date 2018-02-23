@@ -273,6 +273,7 @@ function setupWebGL(canvas, optAttribs, onError) {
     var context = create3DContext(canvas, optAttribs);
     if (!context) {
         handleError(ERROR_OTHER, OTHER_PROBLEM);
+    } else {
         context.getExtension('OES_standard_derivatives');
     }
     return context;
