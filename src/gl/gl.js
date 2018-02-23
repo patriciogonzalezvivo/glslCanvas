@@ -18,7 +18,7 @@ function makeFailHTML(msg) {
 }
 
 /**
- * Mesasge for getting a webgl browser
+ * Message for getting a webgl browser
  * @type {string}
  */
 let GET_A_WEBGL_BROWSER = `
@@ -27,7 +27,7 @@ let GET_A_WEBGL_BROWSER = `
 `;
 
 /**
- * Mesasge for need better hardware
+ * Message for need better hardware
  * @type {string}
  */
 let OTHER_PROBLEM = `
@@ -36,16 +36,30 @@ let OTHER_PROBLEM = `
 `;
 
 /**
+ * Code to return in `onError` callback when the browser doesn't support webgl
+ * @type {number}
+ */
+export const ERROR_BROWSER_SUPPORT = 1;
+
+/**
+ * Code to return in `onError` callback there's any other problem related to webgl
+ * @type {number}
+ */
+export const ERROR_OTHER = 2;
+
+/**
  * Creates a webgl context. If creation fails it will
  * change the contents of the container of the <canvas>
- * tag to an error message with the correct links for WebGL.
+ * tag to an error message with the correct links for WebGL,
+ * unless `onError` option is defined to a callback,
+ * which allows for custom error handling..
  * @param {Element} canvas. The canvas element to create a
  *     context from.
- * @param {WebGLContextCreationAttirbutes} optAttribs Any
+ * @param {WebGLContextCreationAttributes} optAttribs Any
  *     creation attributes you want to pass in.
  * @return {WebGLRenderingContext} The created context.
  */
-export function setupWebGL (canvas, optAttribs) {
+export function setupWebGL (canvas, optAttribs, onError) {
     function showLink(str) {
         let container = canvas.parentNode;
         if (container) {
@@ -53,16 +67,25 @@ export function setupWebGL (canvas, optAttribs) {
         }
     }
 
+    function handleError(errorCode, msg) {
+        if (typeof onError === 'function') {
+            onError(errorCode);
+        } else {
+            showLink(msg);
+        }
+    }
+
     if (!window.WebGLRenderingContext) {
-        showLink(GET_A_WEBGL_BROWSER);
+        handleError(ERROR_BROWSER_SUPPORT, GET_A_WEBGL_BROWSER);
         return null;
     }
 
     let context = create3DContext(canvas, optAttribs);
     if (!context) {
-        showLink(OTHER_PROBLEM);
+        handleError(ERROR_OTHER, OTHER_PROBLEM);
+    } else {
+        context.getExtension('OES_standard_derivatives');
     }
-    context.getExtension('OES_standard_derivatives');
     return context;
 }
 

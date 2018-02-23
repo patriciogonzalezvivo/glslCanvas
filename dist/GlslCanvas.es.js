@@ -214,28 +214,42 @@ function makeFailHTML(msg) {
 }
 
 /**
- * Mesasge for getting a webgl browser
+ * Message for getting a webgl browser
  * @type {string}
  */
 var GET_A_WEBGL_BROWSER = '\n\tThis page requires a browser that supports WebGL.<br/>\n\t<a href="http://get.webgl.org">Click here to upgrade your browser.</a>\n';
 
 /**
- * Mesasge for need better hardware
+ * Message for need better hardware
  * @type {string}
  */
 var OTHER_PROBLEM = '\n\tIt does not appear your computer can support WebGL.<br/>\n\t<a href="http://get.webgl.org/troubleshooting/">Click here for more information.</a>\n';
 
 /**
+ * Code to return in `onError` callback when the browser doesn't support webgl
+ * @type {number}
+ */
+var ERROR_BROWSER_SUPPORT = 1;
+
+/**
+ * Code to return in `onError` callback there's any other problem related to webgl
+ * @type {number}
+ */
+var ERROR_OTHER = 2;
+
+/**
  * Creates a webgl context. If creation fails it will
  * change the contents of the container of the <canvas>
- * tag to an error message with the correct links for WebGL.
+ * tag to an error message with the correct links for WebGL,
+ * unless `onError` option is defined to a callback,
+ * which allows for custom error handling..
  * @param {Element} canvas. The canvas element to create a
  *     context from.
- * @param {WebGLContextCreationAttirbutes} optAttribs Any
+ * @param {WebGLContextCreationAttributes} optAttribs Any
  *     creation attributes you want to pass in.
  * @return {WebGLRenderingContext} The created context.
  */
-function setupWebGL(canvas, optAttribs) {
+function setupWebGL(canvas, optAttribs, onError) {
     function showLink(str) {
         var container = canvas.parentNode;
         if (container) {
@@ -243,16 +257,25 @@ function setupWebGL(canvas, optAttribs) {
         }
     }
 
+    function handleError(errorCode, msg) {
+        if (typeof onError === 'function') {
+            onError(errorCode);
+        } else {
+            showLink(msg);
+        }
+    }
+
     if (!window.WebGLRenderingContext) {
-        showLink(GET_A_WEBGL_BROWSER);
+        handleError(ERROR_BROWSER_SUPPORT, GET_A_WEBGL_BROWSER);
         return null;
     }
 
     var context = create3DContext(canvas, optAttribs);
     if (!context) {
-        showLink(OTHER_PROBLEM);
+        handleError(ERROR_OTHER, OTHER_PROBLEM);
+    } else {
+        context.getExtension('OES_standard_derivatives');
     }
-    context.getExtension('OES_standard_derivatives');
     return context;
 }
 
@@ -943,13 +966,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 var GlslCanvas = function () {
-    function GlslCanvas(canvas, options) {
+    function GlslCanvas(canvas, contextOptions, options) {
         var _this = this;
 
         classCallCheck(this, GlslCanvas);
 
         subscribeMixin$1(this);
 
+        contextOptions = contextOptions || {};
         options = options || {};
 
         this.width = canvas.clientWidth;
@@ -963,11 +987,11 @@ var GlslCanvas = function () {
         this.vbo = {};
         this.isValid = false;
 
-        this.vertexString = options.vertexString || '\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nattribute vec2 a_position;\nattribute vec2 a_texcoord;\n\nvarying vec2 v_texcoord;\n\nvoid main() {\n    gl_Position = vec4(a_position, 0.0, 1.0);\n    v_texcoord = a_texcoord;\n}\n';
-        this.fragmentString = options.fragmentString || '\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nvarying vec2 v_texcoord;\n\nvoid main(){\n    gl_FragColor = vec4(0.0);\n}\n';
+        this.vertexString = contextOptions.vertexString || '\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nattribute vec2 a_position;\nattribute vec2 a_texcoord;\n\nvarying vec2 v_texcoord;\n\nvoid main() {\n    gl_Position = vec4(a_position, 0.0, 1.0);\n    v_texcoord = a_texcoord;\n}\n';
+        this.fragmentString = contextOptions.fragmentString || '\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nvarying vec2 v_texcoord;\n\nvoid main(){\n    gl_FragColor = vec4(0.0);\n}\n';
 
         // GL Context
-        var gl = setupWebGL(canvas, options);
+        var gl = setupWebGL(canvas, contextOptions, options.onError);
         if (!gl) {
             return;
         }
@@ -978,7 +1002,7 @@ var GlslCanvas = function () {
         this.paused = false;
 
         // Allow alpha
-        canvas.style.backgroundColor = options.backgroundColor || 'rgba(1,1,1,0)';
+        canvas.style.backgroundColor = contextOptions.backgroundColor || 'rgba(1,1,1,0)';
 
         // Load shader
         if (canvas.hasAttribute('data-fragment')) {
@@ -1061,7 +1085,9 @@ var GlslCanvas = function () {
             this.animated = false;
             this.isValid = false;
             for (var tex in this.textures) {
-                this.gl.deleteTexture(tex);
+                if (tex.destroy) {
+                    tex.destroy();
+                }
             }
             this.textures = {};
             for (var att in this.attribs) {

@@ -30,9 +30,10 @@ import { isCanvasVisible, isDiff } from './tools/common';
 import { subscribeMixin } from './tools/mixin';
 
 export default class GlslCanvas {
-    constructor(canvas, options) {
+    constructor(canvas, contextOptions, options) {
         subscribeMixin(this);
 
+        contextOptions = contextOptions || {};
         options = options || {};
 
         this.width = canvas.clientWidth;
@@ -46,7 +47,7 @@ export default class GlslCanvas {
         this.vbo = {};
         this.isValid = false;
 
-        this.vertexString = options.vertexString || `
+        this.vertexString = contextOptions.vertexString || `
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -61,7 +62,7 @@ void main() {
     v_texcoord = a_texcoord;
 }
 `;
-        this.fragmentString = options.fragmentString || `
+        this.fragmentString = contextOptions.fragmentString || `
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -74,7 +75,7 @@ void main(){
 `;
 
         // GL Context
-        let gl = setupWebGL(canvas, options);
+        let gl = setupWebGL(canvas, contextOptions, options.onError);
         if (!gl) {
             return;
         }
@@ -85,7 +86,7 @@ void main(){
         this.paused = false;
 
         // Allow alpha
-        canvas.style.backgroundColor = options.backgroundColor || 'rgba(1,1,1,0)';
+        canvas.style.backgroundColor = contextOptions.backgroundColor || 'rgba(1,1,1,0)';
 
         // Load shader
         if (canvas.hasAttribute('data-fragment')) {
@@ -207,8 +208,8 @@ void main(){
                 let match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
                 if (match) {
                     let ext = match[2].split('.').pop().toLowerCase();
-                    if (match[1] &&  match[2] && 
-                        (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || 
+                    if (match[1] && match[2] &&
+                        (ext === 'jpg' || ext === 'jpeg' || ext === 'png' ||
                          ext === 'ogv' || ext === 'webm' || ext === 'mp4')) {
                         this.setUniform(match[1], match[2]);
                     }
@@ -335,7 +336,7 @@ void main(){
                 this.forceRender = true;
             });
         }
-        
+
     }
 
     refreshUniforms() {
