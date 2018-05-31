@@ -113,7 +113,7 @@ export function create3DContext(canvas, optAttribs) {
 /*
  *	Create a Vertex of a specific type (gl.VERTEX_SHADER/)
  */
-export function createShader(main, source, type) {
+export function createShader(main, source, type, offset) {
     let gl = main.gl;
 
     let shader = gl.createShader(type);
@@ -126,7 +126,13 @@ export function createShader(main, source, type) {
         // Something went wrong during compilation; get the error
         lastError = gl.getShaderInfoLog(shader);
         console.error('*** Error compiling shader ' + shader + ':' + lastError);
-        main.trigger('error', { shader: shader, source: source, type: type, error: lastError });
+        main.trigger('error', {
+            shader: shader,
+            source: source,
+            type: type,
+            error: lastError,
+            offset: offset || 0
+        });
         gl.deleteShader(shader);
         return null;
     }
