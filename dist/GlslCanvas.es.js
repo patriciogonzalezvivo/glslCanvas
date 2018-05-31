@@ -201,287 +201,6 @@ var toConsumableArray = function (arr) {
   }
 };
 
-var lastError = '';
-
-/**
- * Creates the HTLM for a failure message
- * @param {string} canvasContainerId id of container of th
- *        canvas.
- * @return {string} The html.
- */
-function makeFailHTML(msg) {
-    return '\n<table style="background-color: #8CE; width: 100%; height: 100%;"><tr>\n<td align="center">\n<div style="display: table-cell; vertical-align: middle;">\n<div style="">' + msg + '</div>\n</div>\n</td></tr></table>\n';
-}
-
-/**
- * Message for getting a webgl browser
- * @type {string}
- */
-var GET_A_WEBGL_BROWSER = '\n\tThis page requires a browser that supports WebGL.<br/>\n\t<a href="http://get.webgl.org">Click here to upgrade your browser.</a>\n';
-
-/**
- * Message for need better hardware
- * @type {string}
- */
-var OTHER_PROBLEM = '\n\tIt does not appear your computer can support WebGL.<br/>\n\t<a href="http://get.webgl.org/troubleshooting/">Click here for more information.</a>\n';
-
-/**
- * Code to return in `onError` callback when the browser doesn't support webgl
- * @type {number}
- */
-var ERROR_BROWSER_SUPPORT = 1;
-
-/**
- * Code to return in `onError` callback there's any other problem related to webgl
- * @type {number}
- */
-var ERROR_OTHER = 2;
-
-/**
- * Creates a webgl context. If creation fails it will
- * change the contents of the container of the <canvas>
- * tag to an error message with the correct links for WebGL,
- * unless `onError` option is defined to a callback,
- * which allows for custom error handling..
- * @param {Element} canvas. The canvas element to create a
- *     context from.
- * @param {WebGLContextCreationAttributes} optAttribs Any
- *     creation attributes you want to pass in.
- * @return {WebGLRenderingContext} The created context.
- */
-function setupWebGL(canvas, optAttribs, onError) {
-    function showLink(str) {
-        var container = canvas.parentNode;
-        if (container) {
-            container.innerHTML = makeFailHTML(str);
-        }
-    }
-
-    function handleError(errorCode, msg) {
-        if (typeof onError === 'function') {
-            onError(errorCode);
-        } else {
-            showLink(msg);
-        }
-    }
-
-    if (!window.WebGLRenderingContext) {
-        handleError(ERROR_BROWSER_SUPPORT, GET_A_WEBGL_BROWSER);
-        return null;
-    }
-
-    var context = create3DContext(canvas, optAttribs);
-    if (!context) {
-        handleError(ERROR_OTHER, OTHER_PROBLEM);
-    } else {
-        context.getExtension('OES_standard_derivatives');
-    }
-    return context;
-}
-
-/**
- * Creates a webgl context.
- * @param {!Canvas} canvas The canvas tag to get context
- *     from. If one is not passed in one will be created.
- * @return {!WebGLContext} The created context.
- */
-function create3DContext(canvas, optAttribs) {
-    var names = ['webgl', 'experimental-webgl'];
-    var context = null;
-    for (var ii = 0; ii < names.length; ++ii) {
-        try {
-            context = canvas.getContext(names[ii], optAttribs);
-        } catch (e) {
-            if (context) {
-                break;
-            }
-        }
-    }
-    return context;
-}
-
-/*
- *	Create a Vertex of a specific type (gl.VERTEX_SHADER/)
- */
-function createShader(main, source, type, offset) {
-    var gl = main.gl;
-
-    var shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-
-    var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-
-    if (!compiled) {
-        // Something went wrong during compilation; get the error
-        lastError = gl.getShaderInfoLog(shader);
-        console.error('*** Error compiling shader ' + shader + ':' + lastError);
-        main.trigger('error', {
-            shader: shader,
-            source: source,
-            type: type,
-            error: lastError,
-            offset: offset || 0
-        });
-        gl.deleteShader(shader);
-        return null;
-    }
-
-    return shader;
-}
-
-/**
- * Loads a shader.
- * @param {!WebGLContext} gl The WebGLContext to use.
- * @param {string} shaderSource The shader source.
- * @param {number} shaderType The type of shader.
- * @param {function(string): void) opt_errorCallback callback for errors.
- * @return {!WebGLShader} The created shader.
- */
-function createProgram(main, shaders, optAttribs, optLocations) {
-    var gl = main.gl;
-
-    var program = gl.createProgram();
-    for (var ii = 0; ii < shaders.length; ++ii) {
-        gl.attachShader(program, shaders[ii]);
-    }
-    if (optAttribs) {
-        for (var _ii = 0; _ii < optAttribs.length; ++_ii) {
-            gl.bindAttribLocation(program, optLocations ? optLocations[_ii] : _ii, optAttribs[_ii]);
-        }
-    }
-    gl.linkProgram(program);
-
-    // Check the link status
-    var linked = gl.getProgramParameter(program, gl.LINK_STATUS);
-    if (!linked) {
-        // something went wrong with the link
-        lastError = gl.getProgramInfoLog(program);
-        console.log('Error in program linking:' + lastError);
-        gl.deleteProgram(program);
-        return null;
-    }
-    return program;
-}
-
-// By Brett Camber on
-// https://github.com/tangrams/tangram/blob/master/src/gl/glsl.js
-function parseUniforms(uniforms) {
-    var prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-
-    var parsed = [];
-
-    for (var name in uniforms) {
-        var uniform = uniforms[name];
-        var u = void 0;
-
-        if (prefix) {
-            name = prefix + '.' + name;
-        }
-
-        // Single float
-        if (typeof uniform === 'number') {
-            parsed.push({
-                type: 'float',
-                method: '1f',
-                name: name,
-                value: uniform
-            });
-        }
-        // Array: vector, array of floats, array of textures, or array of structs
-        else if (Array.isArray(uniform)) {
-                // Numeric values
-                if (typeof uniform[0] === 'number') {
-                    // float vectors (vec2, vec3, vec4)
-                    if (uniform.length === 1) {
-                        parsed.push({
-                            type: 'float',
-                            method: '1f',
-                            name: name,
-                            value: uniform
-                        });
-                    }
-                    // float vectors (vec2, vec3, vec4)
-                    else if (uniform.length >= 2 && uniform.length <= 4) {
-                            parsed.push({
-                                type: 'vec' + uniform.length,
-                                method: uniform.length + 'fv',
-                                name: name,
-                                value: uniform
-                            });
-                        }
-                        // float array
-                        else if (uniform.length > 4) {
-                                parsed.push({
-                                    type: 'float[]',
-                                    method: '1fv',
-                                    name: name + '[0]',
-                                    value: uniform
-                                });
-                            }
-                    // TODO: assume matrix for (typeof == Float32Array && length == 16)?
-                }
-                // Array of textures
-                else if (typeof uniform[0] === 'string') {
-                        parsed.push({
-                            type: 'sampler2D',
-                            method: '1i',
-                            name: name,
-                            value: uniform
-                        });
-                    }
-                    // Array of arrays - but only arrays of vectors are allowed in this case
-                    else if (Array.isArray(uniform[0]) && typeof uniform[0][0] === 'number') {
-                            // float vectors (vec2, vec3, vec4)
-                            if (uniform[0].length >= 2 && uniform[0].length <= 4) {
-                                // Set each vector in the array
-                                for (u = 0; u < uniform.length; u++) {
-                                    parsed.push({
-                                        type: 'vec' + uniform[0].length,
-                                        method: uniform[u].length + 'fv',
-                                        name: name + '[' + u + ']',
-                                        value: uniform[u]
-                                    });
-                                }
-                            }
-                            // else error?
-                        }
-                        // Array of structures
-                        else if (_typeof(uniform[0]) === 'object') {
-                                for (u = 0; u < uniform.length; u++) {
-                                    // Set each struct in the array
-                                    parsed.push.apply(parsed, toConsumableArray(parseUniforms(uniform[u], name + '[' + u + ']')));
-                                }
-                            }
-            }
-            // Boolean
-            else if (typeof uniform === 'boolean') {
-                    parsed.push({
-                        type: 'bool',
-                        method: '1i',
-                        name: name,
-                        value: uniform
-                    });
-                }
-                // Texture
-                else if (typeof uniform === 'string') {
-                        parsed.push({
-                            type: 'sampler2D',
-                            method: '1i',
-                            name: name,
-                            value: uniform
-                        });
-                    }
-                    // Structure
-                    else if ((typeof uniform === 'undefined' ? 'undefined' : _typeof(uniform)) === 'object') {
-                            // Set each field in the struct
-                            parsed.push.apply(parsed, toConsumableArray(parseUniforms(uniform, name)));
-                        }
-        // TODO: support other non-float types? (int, etc.)
-    }
-    return parsed;
-}
-
 function isCanvasVisible(canvas) {
     return canvas.getBoundingClientRect().top + canvas.height > 0 && canvas.getBoundingClientRect().top < (window.innerHeight || document.documentElement.clientHeight);
 }
@@ -948,6 +667,287 @@ Texture.getMaxTextureSize = function (gl) {
 // Global set of textures, by name
 Texture.activeUnit = -1;
 
+var lastError = '';
+
+/**
+ * Creates the HTLM for a failure message
+ * @param {string} canvasContainerId id of container of th
+ *        canvas.
+ * @return {string} The html.
+ */
+function makeFailHTML(msg) {
+    return '\n<table style="background-color: #8CE; width: 100%; height: 100%;"><tr>\n<td align="center">\n<div style="display: table-cell; vertical-align: middle;">\n<div style="">' + msg + '</div>\n</div>\n</td></tr></table>\n';
+}
+
+/**
+ * Message for getting a webgl browser
+ * @type {string}
+ */
+var GET_A_WEBGL_BROWSER = '\n\tThis page requires a browser that supports WebGL.<br/>\n\t<a href="http://get.webgl.org">Click here to upgrade your browser.</a>\n';
+
+/**
+ * Message for need better hardware
+ * @type {string}
+ */
+var OTHER_PROBLEM = '\n\tIt does not appear your computer can support WebGL.<br/>\n\t<a href="http://get.webgl.org/troubleshooting/">Click here for more information.</a>\n';
+
+/**
+ * Code to return in `onError` callback when the browser doesn't support webgl
+ * @type {number}
+ */
+var ERROR_BROWSER_SUPPORT = 1;
+
+/**
+ * Code to return in `onError` callback there's any other problem related to webgl
+ * @type {number}
+ */
+var ERROR_OTHER = 2;
+
+/**
+ * Creates a webgl context. If creation fails it will
+ * change the contents of the container of the <canvas>
+ * tag to an error message with the correct links for WebGL,
+ * unless `onError` option is defined to a callback,
+ * which allows for custom error handling..
+ * @param {Element} canvas. The canvas element to create a
+ *     context from.
+ * @param {WebGLContextCreationAttributes} optAttribs Any
+ *     creation attributes you want to pass in.
+ * @return {WebGLRenderingContext} The created context.
+ */
+function setupWebGL(canvas, optAttribs, onError) {
+    function showLink(str) {
+        var container = canvas.parentNode;
+        if (container) {
+            container.innerHTML = makeFailHTML(str);
+        }
+    }
+
+    function handleError(errorCode, msg) {
+        if (typeof onError === 'function') {
+            onError(errorCode);
+        } else {
+            showLink(msg);
+        }
+    }
+
+    if (!window.WebGLRenderingContext) {
+        handleError(ERROR_BROWSER_SUPPORT, GET_A_WEBGL_BROWSER);
+        return null;
+    }
+
+    var context = create3DContext(canvas, optAttribs);
+    if (!context) {
+        handleError(ERROR_OTHER, OTHER_PROBLEM);
+    } else {
+        context.getExtension('OES_standard_derivatives');
+    }
+    return context;
+}
+
+/**
+ * Creates a webgl context.
+ * @param {!Canvas} canvas The canvas tag to get context
+ *     from. If one is not passed in one will be created.
+ * @return {!WebGLContext} The created context.
+ */
+function create3DContext(canvas, optAttribs) {
+    var names = ['webgl', 'experimental-webgl'];
+    var context = null;
+    for (var ii = 0; ii < names.length; ++ii) {
+        try {
+            context = canvas.getContext(names[ii], optAttribs);
+        } catch (e) {
+            if (context) {
+                break;
+            }
+        }
+    }
+    return context;
+}
+
+/*
+ *	Create a Vertex of a specific type (gl.VERTEX_SHADER/)
+ */
+function createShader(main, source, type, offset) {
+    var gl = main.gl;
+
+    var shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+
+    var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+
+    if (!compiled) {
+        // Something went wrong during compilation; get the error
+        lastError = gl.getShaderInfoLog(shader);
+        console.error('*** Error compiling shader ' + shader + ':' + lastError);
+        main.trigger('error', {
+            shader: shader,
+            source: source,
+            type: type,
+            error: lastError,
+            offset: offset || 0
+        });
+        gl.deleteShader(shader);
+        return null;
+    }
+
+    return shader;
+}
+
+/**
+ * Loads a shader.
+ * @param {!WebGLContext} gl The WebGLContext to use.
+ * @param {string} shaderSource The shader source.
+ * @param {number} shaderType The type of shader.
+ * @param {function(string): void) opt_errorCallback callback for errors.
+ * @return {!WebGLShader} The created shader.
+ */
+function createProgram(main, shaders, optAttribs, optLocations) {
+    var gl = main.gl;
+
+    var program = gl.createProgram();
+    for (var ii = 0; ii < shaders.length; ++ii) {
+        gl.attachShader(program, shaders[ii]);
+    }
+    if (optAttribs) {
+        for (var _ii = 0; _ii < optAttribs.length; ++_ii) {
+            gl.bindAttribLocation(program, optLocations ? optLocations[_ii] : _ii, optAttribs[_ii]);
+        }
+    }
+    gl.linkProgram(program);
+
+    // Check the link status
+    var linked = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (!linked) {
+        // something went wrong with the link
+        lastError = gl.getProgramInfoLog(program);
+        console.log('Error in program linking:' + lastError);
+        gl.deleteProgram(program);
+        return null;
+    }
+    return program;
+}
+
+// By Brett Camber on
+// https://github.com/tangrams/tangram/blob/master/src/gl/glsl.js
+function parseUniforms(uniforms) {
+    var prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+    var parsed = [];
+
+    for (var name in uniforms) {
+        var uniform = uniforms[name];
+        var u = void 0;
+
+        if (prefix) {
+            name = prefix + '.' + name;
+        }
+
+        // Single float
+        if (typeof uniform === 'number') {
+            parsed.push({
+                type: 'float',
+                method: '1f',
+                name: name,
+                value: uniform
+            });
+        }
+        // Array: vector, array of floats, array of textures, or array of structs
+        else if (Array.isArray(uniform)) {
+                // Numeric values
+                if (typeof uniform[0] === 'number') {
+                    // float vectors (vec2, vec3, vec4)
+                    if (uniform.length === 1) {
+                        parsed.push({
+                            type: 'float',
+                            method: '1f',
+                            name: name,
+                            value: uniform
+                        });
+                    }
+                    // float vectors (vec2, vec3, vec4)
+                    else if (uniform.length >= 2 && uniform.length <= 4) {
+                            parsed.push({
+                                type: 'vec' + uniform.length,
+                                method: uniform.length + 'fv',
+                                name: name,
+                                value: uniform
+                            });
+                        }
+                        // float array
+                        else if (uniform.length > 4) {
+                                parsed.push({
+                                    type: 'float[]',
+                                    method: '1fv',
+                                    name: name + '[0]',
+                                    value: uniform
+                                });
+                            }
+                    // TODO: assume matrix for (typeof == Float32Array && length == 16)?
+                }
+                // Array of textures
+                else if (typeof uniform[0] === 'string') {
+                        parsed.push({
+                            type: 'sampler2D',
+                            method: '1i',
+                            name: name,
+                            value: uniform
+                        });
+                    }
+                    // Array of arrays - but only arrays of vectors are allowed in this case
+                    else if (Array.isArray(uniform[0]) && typeof uniform[0][0] === 'number') {
+                            // float vectors (vec2, vec3, vec4)
+                            if (uniform[0].length >= 2 && uniform[0].length <= 4) {
+                                // Set each vector in the array
+                                for (u = 0; u < uniform.length; u++) {
+                                    parsed.push({
+                                        type: 'vec' + uniform[0].length,
+                                        method: uniform[u].length + 'fv',
+                                        name: name + '[' + u + ']',
+                                        value: uniform[u]
+                                    });
+                                }
+                            }
+                            // else error?
+                        }
+                        // Array of structures
+                        else if (_typeof(uniform[0]) === 'object') {
+                                for (u = 0; u < uniform.length; u++) {
+                                    // Set each struct in the array
+                                    parsed.push.apply(parsed, toConsumableArray(parseUniforms(uniform[u], name + '[' + u + ']')));
+                                }
+                            }
+            }
+            // Boolean
+            else if (typeof uniform === 'boolean') {
+                    parsed.push({
+                        type: 'bool',
+                        method: '1i',
+                        name: name,
+                        value: uniform
+                    });
+                }
+                // Texture
+                else if (typeof uniform === 'string') {
+                        parsed.push({
+                            type: 'sampler2D',
+                            method: '1i',
+                            name: name,
+                            value: uniform
+                        });
+                    }
+                    // Structure
+                    else if ((typeof uniform === 'undefined' ? 'undefined' : _typeof(uniform)) === 'object') {
+                            // Set each field in the struct
+                            parsed.push.apply(parsed, toConsumableArray(parseUniforms(uniform, name)));
+                        }
+        // TODO: support other non-float types? (int, etc.)
+    }
+    return parsed;
+}
+
 /*
 The MIT License (MIT)
 
@@ -993,8 +993,8 @@ var GlslCanvas = function () {
         this.vbo = {};
         this.isValid = false;
 
-        this.TEXTURE_COUNT = 0;
         this.BUFFER_COUNT = 0;
+        this.TEXTURE_COUNT = 0;
 
         this.vertexString = contextOptions.vertexString || '\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nattribute vec2 a_position;\nattribute vec2 a_texcoord;\n\nvarying vec2 v_texcoord;\n\nvoid main() {\n    gl_Position = vec4(a_position, 0.0, 1.0);\n    v_texcoord = a_texcoord;\n}\n';
         this.fragmentString = contextOptions.fragmentString || '\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nvarying vec2 v_texcoord;\n\nvoid main(){\n    gl_FragColor = vec4(0.0);\n}\n';
@@ -1355,10 +1355,7 @@ var GlslCanvas = function () {
             if (this.textures[name] === undefined) {
                 this.loadTexture(name, texture, options);
             } else {
-                this.uniform('1i', 'sampler2D', name, this.texureIndex);
-                this.textures[name].bind(this.texureIndex);
-                this.uniform('2f', 'vec2', name + 'Resolution', this.textures[name].width, this.textures[name].height);
-                this.texureIndex++;
+                return true;
             }
         }
     }, {
@@ -1484,16 +1481,23 @@ var GlslCanvas = function () {
             // set the resolution uniform
             gl.uniform2f(gl.getUniformLocation(program, 'u_resolution'), this.canvas.width, this.canvas.height);
             // this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
-            this.texureIndex = 0;
-            for (var texture in this.textures) {
-                this.uniformTexture(texture, {
-                    filtering: 'mipmap',
-                    repeat: true
-                });
-            }
             for (var _key3 in this.buffers) {
                 var buffer = this.buffers[_key3];
                 gl.uniform1i(gl.getUniformLocation(program, buffer.name), buffer.bundle.input.index);
+            }
+            this.TEXTURE_COUNT = this.BUFFER_COUNT;
+            for (var name in this.textures) {
+                if (this.uniformTexture(name, null, {
+                    filtering: 'mipmap',
+                    repeat: true
+                })) {
+                    var texture = this.textures[name];
+                    this.gl.activeTexture(this.gl.TEXTURE0 + this.TEXTURE_COUNT);
+                    this.gl.bindTexture(this.gl.TEXTURE_2D, texture.texture);
+                    this.gl.uniform1i(this.gl.getUniformLocation(program, name), this.TEXTURE_COUNT);
+                    this.gl.uniform2f(this.gl.getUniformLocation(program, name + 'Resolution'), texture.width, texture.height);
+                    this.TEXTURE_COUNT++;
+                }
             }
         }
 
@@ -1612,10 +1616,9 @@ var GlslCanvas = function () {
     }, {
         key: 'createBuffer',
         value: function createBuffer(W, H, program) {
-            var glsl = this;
             var gl = this.gl;
-            var index = this.TEXTURE_COUNT + this.BUFFER_COUNT;
-            this.BUFFER_COUNT++;
+            var index = this.BUFFER_COUNT;
+            this.BUFFER_COUNT += 2;
             this.gl.getExtension('OES_texture_float');
             var texture = this.gl.createTexture();
             this.gl.activeTexture(this.gl.TEXTURE0 + index);
@@ -1639,8 +1642,7 @@ var GlslCanvas = function () {
                     var pixels = new Float32Array(minW * minH * 4);
                     gl.readPixels(0, 0, minW, minH, gl.RGBA, gl.FLOAT, pixels);
                     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                    // create new texture;
-                    var newIndex = glsl.TEXTURE_COUNT + glsl.BUFFER_COUNT;
+                    var newIndex = index + 1;
                     var newTexture = gl.createTexture();
                     gl.activeTexture(gl.TEXTURE0 + newIndex);
                     gl.bindTexture(gl.TEXTURE_2D, newTexture);

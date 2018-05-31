@@ -22,12 +22,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 import xhr from 'xhr';
-
-import { setupWebGL, createShader, createProgram, parseUniforms } from './gl/gl';
 import Texture from './gl/Texture';
-
+import { createProgram, createShader, parseUniforms, setupWebGL } from './gl/gl';
 import { isCanvasVisible, isDiff } from './tools/common';
 import { subscribeMixin } from './tools/mixin';
+
+
 
 export default class GlslCanvas {
     constructor(canvas, contextOptions, options) {
@@ -47,8 +47,8 @@ export default class GlslCanvas {
         this.vbo = {};
         this.isValid = false;
 
-        this.TEXTURE_COUNT = 0;
         this.BUFFER_COUNT = 0;
+        this.TEXTURE_COUNT = 0;
 
         this.vertexString = contextOptions.vertexString || `
 #ifdef GL_ES
@@ -420,10 +420,7 @@ void main(){
             this.loadTexture(name, texture, options);
         }
         else {
-            this.uniform('1i', 'sampler2D', name, this.texureIndex);
-            this.textures[name].bind(this.texureIndex);
-            this.uniform('2f', 'vec2', name + 'Resolution', this.textures[name].width, this.textures[name].height);
-            this.texureIndex++;
+            return true;
         }
     }
 
@@ -537,16 +534,23 @@ void main(){
         // set the resolution uniform
         gl.uniform2f(gl.getUniformLocation(program, 'u_resolution'), this.canvas.width, this.canvas.height);
         // this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
-        this.texureIndex = 0;
-        for (let texture in this.textures) {
-            this.uniformTexture(texture, {
-                filtering: 'mipmap',
-                repeat: true,
-            });
-        }
         for (let key in this.buffers) {
             const buffer = this.buffers[key];
             gl.uniform1i(gl.getUniformLocation(program, buffer.name), buffer.bundle.input.index);
+        }
+        this.TEXTURE_COUNT = this.BUFFER_COUNT;
+        for (let name in this.textures) {
+            if (this.uniformTexture(name, null, {
+                filtering: 'mipmap',
+                repeat: true,
+            })) {
+                const texture = this.textures[name];
+                this.gl.activeTexture(this.gl.TEXTURE0 + this.TEXTURE_COUNT);
+                this.gl.bindTexture(this.gl.TEXTURE_2D, texture.texture);
+                this.gl.uniform1i(this.gl.getUniformLocation(program, name), this.TEXTURE_COUNT);
+                this.gl.uniform2f(this.gl.getUniformLocation(program, name + 'Resolution'), texture.width, texture.height);
+                this.TEXTURE_COUNT ++;
+            }
         }
     }
 
@@ -655,8 +659,8 @@ void main(){
     createBuffer(W, H, program) {
         const glsl = this;
         const gl = this.gl;
-        let index = this.TEXTURE_COUNT + this.BUFFER_COUNT;
-        this.BUFFER_COUNT++;
+        let index = this.BUFFER_COUNT;
+        this.BUFFER_COUNT += 2;
         this.gl.getExtension('OES_texture_float');
         var texture = this.gl.createTexture();
         this.gl.activeTexture(this.gl.TEXTURE0 + index);
@@ -680,8 +684,7 @@ void main(){
                 var pixels = new Float32Array(minW * minH * 4);
                 gl.readPixels(0, 0, minW, minH, gl.RGBA, gl.FLOAT, pixels);
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                // create new texture;
-                var newIndex = glsl.TEXTURE_COUNT + glsl.BUFFER_COUNT;
+                var newIndex = index + 1;
                 var newTexture = gl.createTexture();
                 gl.activeTexture(gl.TEXTURE0 + newIndex);
                 gl.bindTexture(gl.TEXTURE_2D, newTexture);
