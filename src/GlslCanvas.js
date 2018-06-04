@@ -43,6 +43,7 @@ export default class GlslCanvas {
         this.gl = undefined;
         this.program = undefined;
         this.textures = {};
+        this.buffers = {};
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
@@ -182,11 +183,9 @@ void main(){
         }
         this.gl.useProgram(null);
         this.gl.deleteProgram(this.program);
-        if (this.buffers && Object.keys(this.buffers).length > 0) {
-            for (let key in this.buffers) {
-                const buffer = this.buffers[key];
-                this.gl.deleteProgram(buffer.program);
-            }
+        for (let key in this.buffers) {
+            const buffer = this.buffers[key];
+            this.gl.deleteProgram(buffer.program);
         }
         this.program = null;
         this.gl = null;
@@ -204,18 +203,16 @@ void main(){
             this.fragmentString = fragString;
         }
 
-        const options = this.parseString(this.fragmentString, this.vertexString);
-
         this.animated = false;
-        this.nDelta = (options.fragment.match(/u_delta/g) || []).length;
-        this.nTime = (options.fragment.match(/u_time/g) || []).length;
-        this.nDate = (options.fragment.match(/u_date/g) || []).length;
-        this.nMouse = (options.fragment.match(/u_mouse/g) || []).length;
+        this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
+        this.nTime = (this.fragmentString.match(/u_time/g) || []).length;
+        this.nDate = (this.fragmentString.match(/u_date/g) || []).length;
+        this.nMouse = (this.fragmentString.match(/u_mouse/g) || []).length;
         this.animated = this.nDate > 1 || this.nTime > 1 || this.nMouse > 1;
 
-        let nTextures = options.fragment.search(/sampler2D/g);
+        let nTextures = this.fragmentString.search(/sampler2D/g);
         if (nTextures) {
-            let lines = options.fragment.split('\n');
+            let lines = this.fragmentString.split('\n');
             for (let i = 0; i < lines.length; i++) {
                 let match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
                 if (match) {
@@ -233,8 +230,8 @@ void main(){
             }
         }
 
-        let vertexShader = createShader(this, options.vertex, this.gl.VERTEX_SHADER);
-        let fragmentShader = createShader(this, options.fragment, this.gl.FRAGMENT_SHADER, options.offset);
+        let vertexShader = createShader(this, this.vertexString, this.gl.VERTEX_SHADER);
+        let fragmentShader = createShader(this, this.fragmentString, this.gl.FRAGMENT_SHADER);
 
         // If Fragment shader fails load a empty one to sign the error
         if (!fragmentShader) {
@@ -258,10 +255,12 @@ void main(){
         this.program = program;
         this.change = true;
 
-        if (Object.keys(options.buffers).length) {
-            this.loadPrograms(options.buffers);
+        const buffers = this.getBuffers(this.fragmentString);
+        if (Object.keys(buffers).length) {
+            this.loadPrograms(buffers);
         }
-
+        this.buffers = buffers;
+        
         // Trigger event
         this.trigger('load', {});
 
@@ -387,12 +386,10 @@ void main(){
         if (mouse &&
             mouse.x && mouse.x >= rect.left && mouse.x <= rect.right &&
             mouse.y && mouse.y >= rect.top && mouse.y <= rect.bottom) {
-            if (this.buffers && Object.keys(this.buffers).length > 0) {
-                for (let key in this.buffers) {
-                    const buffer = this.buffers[key];
-                    this.gl.useProgram(buffer.program);
-                    this.gl.uniform2f(this.gl.getUniformLocation(buffer.program, 'u_mouse'), mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
-                }
+            for (let key in this.buffers) {
+                const buffer = this.buffers[key];
+                this.gl.useProgram(buffer.program);
+                this.gl.uniform2f(this.gl.getUniformLocation(buffer.program, 'u_mouse'), mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
             }
             this.gl.useProgram(this.program);
             this.gl.uniform2f(this.gl.getUniformLocation(this.program, 'u_mouse'), mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
@@ -485,12 +482,10 @@ void main(){
             H = gl.canvas.height;
         this.updateVariables();
         gl.viewport(0, 0, W, H);
-        if (this.buffers && Object.keys(this.buffers).length > 0) {
-            for (let key in this.buffers) {
-                const buffer = this.buffers[key];
-                this.updateUniforms(buffer.program, key);
-                buffer.bundle.render(W, H, buffer.program, buffer.name);
-            }
+        for (let key in this.buffers) {
+            const buffer = this.buffers[key];
+            this.updateUniforms(buffer.program, key);
+            buffer.bundle.render(W, H, buffer.program, buffer.name);
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }
         this.updateUniforms(this.program, 'main');
@@ -545,55 +540,26 @@ void main(){
                 repeat: true,
             })) {
                 const texture = this.textures[name];
-                this.gl.activeTexture(this.gl.TEXTURE0 + this.TEXTURE_COUNT);
-                this.gl.bindTexture(this.gl.TEXTURE_2D, texture.texture);
-                this.gl.uniform1i(this.gl.getUniformLocation(program, name), this.TEXTURE_COUNT);
-                this.gl.uniform2f(this.gl.getUniformLocation(program, name + 'Resolution'), texture.width, texture.height);
+                gl.activeTexture(gl.TEXTURE0 + this.TEXTURE_COUNT);
+                gl.bindTexture(gl.TEXTURE_2D, texture.texture);
+                gl.uniform1i(gl.getUniformLocation(program, name), this.TEXTURE_COUNT);
+                gl.uniform2f(gl.getUniformLocation(program, name + 'Resolution'), texture.width, texture.height);
                 this.TEXTURE_COUNT ++;
             }
         }
     }
 
     // parse input strings
-    parseString(fragString, vertString) {
-        let source = fragString;
-        let offset;
-        let options = {
-            vertex: vertString,
-            fragment: null,
-            main: null,
-            buffers: {},
-        };
-        let linediff = 0;
+    getBuffers(fragString) {
+        let buffers = {};
         if (fragString) {
-            fragString = fragString.replace(new RegExp('(/{2} u_buffer_)(\\d+).*((.|[\\r\\n]+)*?)(?=/{2} u_buffer|/{2} main|$)', 'g'), function (match, name, i, text, end, offset) {
-                offset = source.substr(0, offset).split('\n').length;
-                options.buffers['u_buffer_' + i] = {
-                    fragment: text,
-                    offset: offset,
+            fragString.replace(new RegExp('(defined\\(BUFFER_)(\\d+)\\)', 'g'), function (match, name, i) {
+                buffers['u_buffer_' + i] = {
+                    fragment: '#define BUFFER_' + i + '\n' + fragString
                 };
-                return '';
-            });
-            fragString = fragString.replace(new RegExp('(/{2} main).*((.|[\\r\\n]+)*)(?=/{2} u_buffer|$)', 'g'), (match, name, main, end, offset) => {
-                options.main = main;
-                return '';
-            });
-            linediff = fragString.split('\n').length;
-        }
-        offset = 0;
-        if (options.main) {
-            source.replace(new RegExp('(/{2} main).*((.|[\\r\\n]+)*)(?=/{2} u_buffer|$)', 'g'), (match, name, main, end, offset) => {
-                offset = source.substr(0, offset).split('\n').length - linediff;
-                return '';
             });
         }
-        for (let key in options.buffers) {
-            options.buffers[key].common = fragString;
-            options.buffers[key].offset -= linediff;
-        }
-        options.fragment = fragString + (options.main || '');
-        options.offset = offset;
-        return options;
+        return buffers;
     }
 
     // load buffers programs
@@ -601,11 +567,10 @@ void main(){
         const glsl = this;
         const gl = this.gl;
         let i = 0;
-        this.buffers = {};
         const vertex = createShader(glsl, glsl.vertexString, gl.VERTEX_SHADER);
         for (let key in buffers) {
             const buffer = buffers[key];
-            let fragment = createShader(glsl, buffer.common + buffer.fragment, gl.FRAGMENT_SHADER, buffer.line);
+            let fragment = createShader(glsl, buffer.fragment, gl.FRAGMENT_SHADER, 1);
             if (!fragment) {
                 fragment = createShader(glsl, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', gl.FRAGMENT_SHADER);
                 glsl.isValid = false;
@@ -616,7 +581,6 @@ void main(){
             buffer.name = 'u_buffer_' + i;
             buffer.program = program;
             buffer.bundle = glsl.createSwappableBuffer(glsl.canvas.width, glsl.canvas.height, program);
-            glsl.buffers[key] = buffer;
             gl.deleteShader(fragment);
             i++;
         }
@@ -661,16 +625,16 @@ void main(){
         const gl = this.gl;
         let index = this.BUFFER_COUNT;
         this.BUFFER_COUNT += 2;
-        this.gl.getExtension('OES_texture_float');
-        var texture = this.gl.createTexture();
-        this.gl.activeTexture(this.gl.TEXTURE0 + index);
-        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
-        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, W, H, 0, this.gl.RGBA, this.gl.FLOAT, null);
-        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
-        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
-        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-        var buffer = this.gl.createFramebuffer();
+        gl.getExtension('OES_texture_float');
+        var texture = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0 + index);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.FLOAT, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        var buffer = gl.createFramebuffer();
         return {
             index: index,
             texture: texture,
@@ -713,16 +677,14 @@ void main(){
     // to avoid requestAnimationFrame and Gl violations
     resizeSwappableBuffers() {
         const gl = this.gl;
-        if (this.buffers && Object.keys(this.buffers).length > 0) {
-            const W = gl.canvas.width,
-                H = gl.canvas.height;
-            gl.viewport(0, 0, W, H);
-            for (let key in this.buffers) {
-                const buffer = this.buffers[key];
-                buffer.bundle.resize(W, H, buffer.program, buffer.name);
-            }
-            gl.useProgram(this.program);
+        const W = gl.canvas.width,
+            H = gl.canvas.height;
+        gl.viewport(0, 0, W, H);
+        for (let key in this.buffers) {
+            const buffer = this.buffers[key];
+            buffer.bundle.resize(W, H, buffer.program, buffer.name);
         }
+        gl.useProgram(this.program);
     }
 
 }

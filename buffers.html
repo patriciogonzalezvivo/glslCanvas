@@ -5,52 +5,18 @@
     <meta charset="utf-8">
     <title>GlslCanvas</title>
     <script type="text/javascript" src="dist/GlslCanvas.js"></script>
-
     <style>
         body {
             background: #101515;
         }
-
         #glslCanvas {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
         }
-
-        ​ #credits {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-            text-align: right;
-            background: rgba(0, 0, 0, .5);
-            padding: 12px;
-            padding-top: 5px;
-            padding-bottom: 5px;
-            margin: 0px
-        }
-
-        .label {
-            color: white;
-            font-family: Helvetica, Arial, sans-serif;
-            text-decoration: none;
-            line-height: 0.0;
-        }
-
-        #title {
-            font-size: 24px;
-            font-weight: 600;
-        }
-
-        #author {
-            font-size: 14px;
-            font-style: italic;
-            font-weight: 100;
-        }
     </style>
-
 </head>
-
 <body>
     <canvas id="glslCanvas" data-fragment="
 #ifdef GL_ES
@@ -127,7 +93,25 @@ float getMouse() {
     return d;
 }
 
-// u_buffer_0
+#if defined(BUFFER_0)
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+    vec3 diff = vec3(vec2(1.0) / u_resolution.xy, 0.0);
+    vec4 center = texture2D(u_buffer_1, uv, 0.0);
+    float top = texture2D(u_buffer_1, uv - diff.zy, 0.0).r;
+    float left = texture2D(u_buffer_1, uv - diff.xz, 0.0).r;
+    float right = texture2D(u_buffer_1, uv + diff.xz, 0.0).r;
+    float bottom = texture2D(u_buffer_1, uv + diff.zy, 0.0).r;
+    float red = -(center.g - 0.5) * 2.0 + (top + left + right + bottom - 2.0);
+    red += smoothstep(4.5, 0.5, length(u_mouse.xy - gl_FragCoord.xy)); // mouse
+    red *= 0.99; // damping
+    red *= step(0.1, u_time); // hacky way of clearing the buffer
+    red = 0.5 + red * 0.5;
+    gl_FragColor = vec4(red, center.r, 0.0, 0.0);
+}
+
+#elif defined(BUFFER_1)
 
 void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution.xy;
@@ -138,14 +122,14 @@ void main() {
     float right = texture2D(u_buffer_0, uv + diff.xz, 0.0).r;
     float bottom = texture2D(u_buffer_0, uv + diff.zy, 0.0).r;
     float red = -(center.g - 0.5) * 2.0 + (top + left + right + bottom - 2.0);
-    red += smoothstep(4.5, 0.5, length(u_mouse.xy - gl_FragCoord.xy)); // mouse
+    red += smoothstep(4.5, 0.5, length(u_mouse.yx - gl_FragCoord.xy)); // mouse
     red *= 0.99; // damping
     red *= step(0.1, u_time); // hacky way of clearing the buffer
     red = 0.5 + red * 0.5;
     gl_FragColor = vec4(red, center.r, 0.0, 0.0);
 }
 
-// main
+#else
 
 float h (vec3 p) { return 4.0 * texture2D(u_buffer_0, 0.5 + p.xz / HEIGHTMAPSCALE, 0.0).x; }
 float DE (vec3 p) { return 1.2 * (p.y - h(p)); }
@@ -212,19 +196,20 @@ void main() {
     float distSqr = dot(uv, uv);
     gl_FragColor.xyz *= 1.0 - 0.5 * distSqr;
 #else
-    float c = texture2D(u_buffer_0, q).r;
-    vec3 color = vec3(c);
-    gl_FragColor = vec4(color, 1.0);
+    float a = texture2D(u_buffer_0, q).r;
+    float b = texture2D(u_buffer_1, q).r;
+    gl_FragColor = vec4(a, b, 0.0, 1.0);
 #endif
 }
+
+#endif
 " width="800" height="600"></canvas>
 </body>
-
 <script>
     var canvas = document.getElementById("glslCanvas");
     console.log(canvas.getAttribute('data-fragment'));
     var sandbox = new GlslCanvas(canvas);
-    sandbox.uniformTexture('u_texture_0', 'https://rawgit.com/actarian/shaders/master/fader/fader.jpg', {
+    sandbox.uniformTexture('u_texture_0', 'https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/data/moon.jpg', {
         filtering: 'mipmap',
         repeat: true,
     });
@@ -236,5 +221,4 @@ void main() {
     canvas.style.width = '100%';
     canvas.style.height = '100%';
 </script>
-
 </html>
