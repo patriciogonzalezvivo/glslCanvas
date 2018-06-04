@@ -553,7 +553,7 @@ void main(){
     getBuffers(fragString) {
         let buffers = {};
         if (fragString) {
-            fragString.replace(new RegExp('(defined\\(BUFFER_)(\\d+)\\)', 'g'), function (match, name, i) {
+            fragString.replace(new RegExp('(defined\\s*\\(\\s*BUFFER_)(\\d+)\\s*\\)', 'g'), function (match, name, i) {
                 buffers['u_buffer_' + i] = {
                     fragment: '#define BUFFER_' + i + '\n' + fragString
                 };

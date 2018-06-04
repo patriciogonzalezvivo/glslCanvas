@@ -27,6 +27,7 @@ uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
 
+uniform sampler2D u_texture_0;
 uniform sampler2D u_buffer_0;
 uniform sampler2D u_buffer_1;
 
@@ -111,7 +112,7 @@ void main() {
     gl_FragColor = vec4(red, center.r, 0.0, 0.0);
 }
 
-#elif defined(BUFFER_1)
+#elif defined( BUFFER_1 )
 
 void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution.xy;
@@ -198,6 +199,7 @@ void main() {
 #else
     float a = texture2D(u_buffer_0, q).r;
     float b = texture2D(u_buffer_1, q).r;
+    // float c = texture2D(u_texture_0, q).r;
     gl_FragColor = vec4(a, b, 0.0, 1.0);
 #endif
 }
