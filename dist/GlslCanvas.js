@@ -598,281 +598,6 @@ var toConsumableArray = function (arr) {
   }
 };
 
-var lastError = '';
-
-/**
- * Creates the HTLM for a failure message
- * @param {string} canvasContainerId id of container of th
- *        canvas.
- * @return {string} The html.
- */
-function makeFailHTML(msg) {
-    return '\n<table style="background-color: #8CE; width: 100%; height: 100%;"><tr>\n<td align="center">\n<div style="display: table-cell; vertical-align: middle;">\n<div style="">' + msg + '</div>\n</div>\n</td></tr></table>\n';
-}
-
-/**
- * Message for getting a webgl browser
- * @type {string}
- */
-var GET_A_WEBGL_BROWSER = '\n\tThis page requires a browser that supports WebGL.<br/>\n\t<a href="http://get.webgl.org">Click here to upgrade your browser.</a>\n';
-
-/**
- * Message for need better hardware
- * @type {string}
- */
-var OTHER_PROBLEM = '\n\tIt does not appear your computer can support WebGL.<br/>\n\t<a href="http://get.webgl.org/troubleshooting/">Click here for more information.</a>\n';
-
-/**
- * Code to return in `onError` callback when the browser doesn't support webgl
- * @type {number}
- */
-var ERROR_BROWSER_SUPPORT = 1;
-
-/**
- * Code to return in `onError` callback there's any other problem related to webgl
- * @type {number}
- */
-var ERROR_OTHER = 2;
-
-/**
- * Creates a webgl context. If creation fails it will
- * change the contents of the container of the <canvas>
- * tag to an error message with the correct links for WebGL,
- * unless `onError` option is defined to a callback,
- * which allows for custom error handling..
- * @param {Element} canvas. The canvas element to create a
- *     context from.
- * @param {WebGLContextCreationAttributes} optAttribs Any
- *     creation attributes you want to pass in.
- * @return {WebGLRenderingContext} The created context.
- */
-function setupWebGL(canvas, optAttribs, onError) {
-    function showLink(str) {
-        var container = canvas.parentNode;
-        if (container) {
-            container.innerHTML = makeFailHTML(str);
-        }
-    }
-
-    function handleError(errorCode, msg) {
-        if (typeof onError === 'function') {
-            onError(errorCode);
-        } else {
-            showLink(msg);
-        }
-    }
-
-    if (!window.WebGLRenderingContext) {
-        handleError(ERROR_BROWSER_SUPPORT, GET_A_WEBGL_BROWSER);
-        return null;
-    }
-
-    var context = create3DContext(canvas, optAttribs);
-    if (!context) {
-        handleError(ERROR_OTHER, OTHER_PROBLEM);
-    } else {
-        context.getExtension('OES_standard_derivatives');
-    }
-    return context;
-}
-
-/**
- * Creates a webgl context.
- * @param {!Canvas} canvas The canvas tag to get context
- *     from. If one is not passed in one will be created.
- * @return {!WebGLContext} The created context.
- */
-function create3DContext(canvas, optAttribs) {
-    var names = ['webgl', 'experimental-webgl'];
-    var context = null;
-    for (var ii = 0; ii < names.length; ++ii) {
-        try {
-            context = canvas.getContext(names[ii], optAttribs);
-        } catch (e) {
-            if (context) {
-                break;
-            }
-        }
-    }
-    return context;
-}
-
-/*
- *	Create a Vertex of a specific type (gl.VERTEX_SHADER/)
- */
-function createShader(main, source, type) {
-    var gl = main.gl;
-
-    var shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-
-    var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-
-    if (!compiled) {
-        // Something went wrong during compilation; get the error
-        lastError = gl.getShaderInfoLog(shader);
-        console.error('*** Error compiling shader ' + shader + ':' + lastError);
-        main.trigger('error', { shader: shader, source: source, type: type, error: lastError });
-        gl.deleteShader(shader);
-        return null;
-    }
-
-    return shader;
-}
-
-/**
- * Loads a shader.
- * @param {!WebGLContext} gl The WebGLContext to use.
- * @param {string} shaderSource The shader source.
- * @param {number} shaderType The type of shader.
- * @param {function(string): void) opt_errorCallback callback for errors.
- * @return {!WebGLShader} The created shader.
- */
-function createProgram(main, shaders, optAttribs, optLocations) {
-    var gl = main.gl;
-
-    var program = gl.createProgram();
-    for (var ii = 0; ii < shaders.length; ++ii) {
-        gl.attachShader(program, shaders[ii]);
-    }
-    if (optAttribs) {
-        for (var _ii = 0; _ii < optAttribs.length; ++_ii) {
-            gl.bindAttribLocation(program, optLocations ? optLocations[_ii] : _ii, optAttribs[_ii]);
-        }
-    }
-    gl.linkProgram(program);
-
-    // Check the link status
-    var linked = gl.getProgramParameter(program, gl.LINK_STATUS);
-    if (!linked) {
-        // something went wrong with the link
-        lastError = gl.getProgramInfoLog(program);
-        console.log('Error in program linking:' + lastError);
-        gl.deleteProgram(program);
-        return null;
-    }
-    return program;
-}
-
-// By Brett Camber on
-// https://github.com/tangrams/tangram/blob/master/src/gl/glsl.js
-function parseUniforms(uniforms) {
-    var prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-
-    var parsed = [];
-
-    for (var name in uniforms) {
-        var uniform = uniforms[name];
-        var u = void 0;
-
-        if (prefix) {
-            name = prefix + '.' + name;
-        }
-
-        // Single float
-        if (typeof uniform === 'number') {
-            parsed.push({
-                type: 'float',
-                method: '1f',
-                name: name,
-                value: uniform
-            });
-        }
-        // Array: vector, array of floats, array of textures, or array of structs
-        else if (Array.isArray(uniform)) {
-                // Numeric values
-                if (typeof uniform[0] === 'number') {
-                    // float vectors (vec2, vec3, vec4)
-                    if (uniform.length === 1) {
-                        parsed.push({
-                            type: 'float',
-                            method: '1f',
-                            name: name,
-                            value: uniform
-                        });
-                    }
-                    // float vectors (vec2, vec3, vec4)
-                    else if (uniform.length >= 2 && uniform.length <= 4) {
-                            parsed.push({
-                                type: 'vec' + uniform.length,
-                                method: uniform.length + 'fv',
-                                name: name,
-                                value: uniform
-                            });
-                        }
-                        // float array
-                        else if (uniform.length > 4) {
-                                parsed.push({
-                                    type: 'float[]',
-                                    method: '1fv',
-                                    name: name + '[0]',
-                                    value: uniform
-                                });
-                            }
-                    // TODO: assume matrix for (typeof == Float32Array && length == 16)?
-                }
-                // Array of textures
-                else if (typeof uniform[0] === 'string') {
-                        parsed.push({
-                            type: 'sampler2D',
-                            method: '1i',
-                            name: name,
-                            value: uniform
-                        });
-                    }
-                    // Array of arrays - but only arrays of vectors are allowed in this case
-                    else if (Array.isArray(uniform[0]) && typeof uniform[0][0] === 'number') {
-                            // float vectors (vec2, vec3, vec4)
-                            if (uniform[0].length >= 2 && uniform[0].length <= 4) {
-                                // Set each vector in the array
-                                for (u = 0; u < uniform.length; u++) {
-                                    parsed.push({
-                                        type: 'vec' + uniform[0].length,
-                                        method: uniform[u].length + 'fv',
-                                        name: name + '[' + u + ']',
-                                        value: uniform[u]
-                                    });
-                                }
-                            }
-                            // else error?
-                        }
-                        // Array of structures
-                        else if (_typeof(uniform[0]) === 'object') {
-                                for (u = 0; u < uniform.length; u++) {
-                                    // Set each struct in the array
-                                    parsed.push.apply(parsed, toConsumableArray(parseUniforms(uniform[u], name + '[' + u + ']')));
-                                }
-                            }
-            }
-            // Boolean
-            else if (typeof uniform === 'boolean') {
-                    parsed.push({
-                        type: 'bool',
-                        method: '1i',
-                        name: name,
-                        value: uniform
-                    });
-                }
-                // Texture
-                else if (typeof uniform === 'string') {
-                        parsed.push({
-                            type: 'sampler2D',
-                            method: '1i',
-                            name: name,
-                            value: uniform
-                        });
-                    }
-                    // Structure
-                    else if ((typeof uniform === 'undefined' ? 'undefined' : _typeof(uniform)) === 'object') {
-                            // Set each field in the struct
-                            parsed.push.apply(parsed, toConsumableArray(parseUniforms(uniform, name)));
-                        }
-        // TODO: support other non-float types? (int, etc.)
-    }
-    return parsed;
-}
-
 function isCanvasVisible(canvas) {
     return canvas.getBoundingClientRect().top + canvas.height > 0 && canvas.getBoundingClientRect().top < (window.innerHeight || document.documentElement.clientHeight);
 }
@@ -1339,6 +1064,287 @@ Texture.getMaxTextureSize = function (gl) {
 // Global set of textures, by name
 Texture.activeUnit = -1;
 
+var lastError = '';
+
+/**
+ * Creates the HTLM for a failure message
+ * @param {string} canvasContainerId id of container of th
+ *        canvas.
+ * @return {string} The html.
+ */
+function makeFailHTML(msg) {
+    return '\n<table style="background-color: #8CE; width: 100%; height: 100%;"><tr>\n<td align="center">\n<div style="display: table-cell; vertical-align: middle;">\n<div style="">' + msg + '</div>\n</div>\n</td></tr></table>\n';
+}
+
+/**
+ * Message for getting a webgl browser
+ * @type {string}
+ */
+var GET_A_WEBGL_BROWSER = '\n\tThis page requires a browser that supports WebGL.<br/>\n\t<a href="http://get.webgl.org">Click here to upgrade your browser.</a>\n';
+
+/**
+ * Message for need better hardware
+ * @type {string}
+ */
+var OTHER_PROBLEM = '\n\tIt does not appear your computer can support WebGL.<br/>\n\t<a href="http://get.webgl.org/troubleshooting/">Click here for more information.</a>\n';
+
+/**
+ * Code to return in `onError` callback when the browser doesn't support webgl
+ * @type {number}
+ */
+var ERROR_BROWSER_SUPPORT = 1;
+
+/**
+ * Code to return in `onError` callback there's any other problem related to webgl
+ * @type {number}
+ */
+var ERROR_OTHER = 2;
+
+/**
+ * Creates a webgl context. If creation fails it will
+ * change the contents of the container of the <canvas>
+ * tag to an error message with the correct links for WebGL,
+ * unless `onError` option is defined to a callback,
+ * which allows for custom error handling..
+ * @param {Element} canvas. The canvas element to create a
+ *     context from.
+ * @param {WebGLContextCreationAttributes} optAttribs Any
+ *     creation attributes you want to pass in.
+ * @return {WebGLRenderingContext} The created context.
+ */
+function setupWebGL(canvas, optAttribs, onError) {
+    function showLink(str) {
+        var container = canvas.parentNode;
+        if (container) {
+            container.innerHTML = makeFailHTML(str);
+        }
+    }
+
+    function handleError(errorCode, msg) {
+        if (typeof onError === 'function') {
+            onError(errorCode);
+        } else {
+            showLink(msg);
+        }
+    }
+
+    if (!window.WebGLRenderingContext) {
+        handleError(ERROR_BROWSER_SUPPORT, GET_A_WEBGL_BROWSER);
+        return null;
+    }
+
+    var context = create3DContext(canvas, optAttribs);
+    if (!context) {
+        handleError(ERROR_OTHER, OTHER_PROBLEM);
+    } else {
+        context.getExtension('OES_standard_derivatives');
+    }
+    return context;
+}
+
+/**
+ * Creates a webgl context.
+ * @param {!Canvas} canvas The canvas tag to get context
+ *     from. If one is not passed in one will be created.
+ * @return {!WebGLContext} The created context.
+ */
+function create3DContext(canvas, optAttribs) {
+    var names = ['webgl', 'experimental-webgl'];
+    var context = null;
+    for (var ii = 0; ii < names.length; ++ii) {
+        try {
+            context = canvas.getContext(names[ii], optAttribs);
+        } catch (e) {
+            if (context) {
+                break;
+            }
+        }
+    }
+    return context;
+}
+
+/*
+ *	Create a Vertex of a specific type (gl.VERTEX_SHADER/)
+ */
+function createShader(main, source, type, offset) {
+    var gl = main.gl;
+
+    var shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+
+    var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+
+    if (!compiled) {
+        // Something went wrong during compilation; get the error
+        lastError = gl.getShaderInfoLog(shader);
+        console.error('*** Error compiling shader ' + shader + ':' + lastError);
+        main.trigger('error', {
+            shader: shader,
+            source: source,
+            type: type,
+            error: lastError,
+            offset: offset || 0
+        });
+        gl.deleteShader(shader);
+        return null;
+    }
+
+    return shader;
+}
+
+/**
+ * Loads a shader.
+ * @param {!WebGLContext} gl The WebGLContext to use.
+ * @param {string} shaderSource The shader source.
+ * @param {number} shaderType The type of shader.
+ * @param {function(string): void) opt_errorCallback callback for errors.
+ * @return {!WebGLShader} The created shader.
+ */
+function createProgram(main, shaders, optAttribs, optLocations) {
+    var gl = main.gl;
+
+    var program = gl.createProgram();
+    for (var ii = 0; ii < shaders.length; ++ii) {
+        gl.attachShader(program, shaders[ii]);
+    }
+    if (optAttribs) {
+        for (var _ii = 0; _ii < optAttribs.length; ++_ii) {
+            gl.bindAttribLocation(program, optLocations ? optLocations[_ii] : _ii, optAttribs[_ii]);
+        }
+    }
+    gl.linkProgram(program);
+
+    // Check the link status
+    var linked = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (!linked) {
+        // something went wrong with the link
+        lastError = gl.getProgramInfoLog(program);
+        console.log('Error in program linking:' + lastError);
+        gl.deleteProgram(program);
+        return null;
+    }
+    return program;
+}
+
+// By Brett Camber on
+// https://github.com/tangrams/tangram/blob/master/src/gl/glsl.js
+function parseUniforms(uniforms) {
+    var prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+    var parsed = [];
+
+    for (var name in uniforms) {
+        var uniform = uniforms[name];
+        var u = void 0;
+
+        if (prefix) {
+            name = prefix + '.' + name;
+        }
+
+        // Single float
+        if (typeof uniform === 'number') {
+            parsed.push({
+                type: 'float',
+                method: '1f',
+                name: name,
+                value: uniform
+            });
+        }
+        // Array: vector, array of floats, array of textures, or array of structs
+        else if (Array.isArray(uniform)) {
+                // Numeric values
+                if (typeof uniform[0] === 'number') {
+                    // float vectors (vec2, vec3, vec4)
+                    if (uniform.length === 1) {
+                        parsed.push({
+                            type: 'float',
+                            method: '1f',
+                            name: name,
+                            value: uniform
+                        });
+                    }
+                    // float vectors (vec2, vec3, vec4)
+                    else if (uniform.length >= 2 && uniform.length <= 4) {
+                            parsed.push({
+                                type: 'vec' + uniform.length,
+                                method: uniform.length + 'fv',
+                                name: name,
+                                value: uniform
+                            });
+                        }
+                        // float array
+                        else if (uniform.length > 4) {
+                                parsed.push({
+                                    type: 'float[]',
+                                    method: '1fv',
+                                    name: name + '[0]',
+                                    value: uniform
+                                });
+                            }
+                    // TODO: assume matrix for (typeof == Float32Array && length == 16)?
+                }
+                // Array of textures
+                else if (typeof uniform[0] === 'string') {
+                        parsed.push({
+                            type: 'sampler2D',
+                            method: '1i',
+                            name: name,
+                            value: uniform
+                        });
+                    }
+                    // Array of arrays - but only arrays of vectors are allowed in this case
+                    else if (Array.isArray(uniform[0]) && typeof uniform[0][0] === 'number') {
+                            // float vectors (vec2, vec3, vec4)
+                            if (uniform[0].length >= 2 && uniform[0].length <= 4) {
+                                // Set each vector in the array
+                                for (u = 0; u < uniform.length; u++) {
+                                    parsed.push({
+                                        type: 'vec' + uniform[0].length,
+                                        method: uniform[u].length + 'fv',
+                                        name: name + '[' + u + ']',
+                                        value: uniform[u]
+                                    });
+                                }
+                            }
+                            // else error?
+                        }
+                        // Array of structures
+                        else if (_typeof(uniform[0]) === 'object') {
+                                for (u = 0; u < uniform.length; u++) {
+                                    // Set each struct in the array
+                                    parsed.push.apply(parsed, toConsumableArray(parseUniforms(uniform[u], name + '[' + u + ']')));
+                                }
+                            }
+            }
+            // Boolean
+            else if (typeof uniform === 'boolean') {
+                    parsed.push({
+                        type: 'bool',
+                        method: '1i',
+                        name: name,
+                        value: uniform
+                    });
+                }
+                // Texture
+                else if (typeof uniform === 'string') {
+                        parsed.push({
+                            type: 'sampler2D',
+                            method: '1i',
+                            name: name,
+                            value: uniform
+                        });
+                    }
+                    // Structure
+                    else if ((typeof uniform === 'undefined' ? 'undefined' : _typeof(uniform)) === 'object') {
+                            // Set each field in the struct
+                            parsed.push.apply(parsed, toConsumableArray(parseUniforms(uniform, name)));
+                        }
+        // TODO: support other non-float types? (int, etc.)
+    }
+    return parsed;
+}
+
 /*
 The MIT License (MIT)
 
@@ -1380,9 +1386,13 @@ var GlslCanvas = function () {
         this.gl = undefined;
         this.program = undefined;
         this.textures = {};
+        this.buffers = {};
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
+
+        this.BUFFER_COUNT = 0;
+        this.TEXTURE_COUNT = 0;
 
         this.vertexString = contextOptions.vertexString || '\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nattribute vec2 a_position;\nattribute vec2 a_texcoord;\n\nvarying vec2 v_texcoord;\n\nvoid main() {\n    gl_Position = vec4(a_position, 0.0, 1.0);\n    v_texcoord = a_texcoord;\n}\n';
         this.fragmentString = contextOptions.fragmentString || '\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nvarying vec2 v_texcoord;\n\nvoid main(){\n    gl_FragColor = vec4(0.0);\n}\n';
@@ -1394,7 +1404,7 @@ var GlslCanvas = function () {
         }
         this.gl = gl;
         this.timeLoad = this.timePrev = performance.now();
-        this.timeDelta = 0.;
+        this.timeDelta = 0.0;
         this.forceRender = true;
         this.paused = false;
 
@@ -1465,8 +1475,8 @@ var GlslCanvas = function () {
             if (sandbox.nMouse > 1) {
                 sandbox.setMouse(mouse);
             }
-            sandbox.render();
             sandbox.forceRender = sandbox.resize();
+            sandbox.render();
             window.requestAnimationFrame(RenderLoop);
         }
 
@@ -1492,12 +1502,17 @@ var GlslCanvas = function () {
             }
             this.gl.useProgram(null);
             this.gl.deleteProgram(this.program);
+            for (var key in this.buffers) {
+                var buffer = this.buffers[key];
+                this.gl.deleteProgram(buffer.program);
+            }
             this.program = null;
             this.gl = null;
         }
     }, {
         key: 'load',
         value: function load(fragString, vertString) {
+
             // Load vertex shader if there is one
             if (vertString) {
                 this.vertexString = vertString;
@@ -1556,6 +1571,12 @@ var GlslCanvas = function () {
 
             this.program = program;
             this.change = true;
+
+            var buffers = this.getBuffers(this.fragmentString);
+            if (Object.keys(buffers).length) {
+                this.loadPrograms(buffers);
+            }
+            this.buffers = buffers;
 
             // Trigger event
             this.trigger('load', {});
@@ -1688,7 +1709,13 @@ var GlslCanvas = function () {
             // set the mouse uniform
             var rect = this.canvas.getBoundingClientRect();
             if (mouse && mouse.x && mouse.x >= rect.left && mouse.x <= rect.right && mouse.y && mouse.y >= rect.top && mouse.y <= rect.bottom) {
-                this.uniform('2f', 'vec2', 'u_mouse', mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
+                for (var key in this.buffers) {
+                    var buffer = this.buffers[key];
+                    this.gl.useProgram(buffer.program);
+                    this.gl.uniform2f(this.gl.getUniformLocation(buffer.program, 'u_mouse'), mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
+                }
+                this.gl.useProgram(this.program);
+                this.gl.uniform2f(this.gl.getUniformLocation(this.program, 'u_mouse'), mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
             }
         }
 
@@ -1722,10 +1749,7 @@ var GlslCanvas = function () {
             if (this.textures[name] === undefined) {
                 this.loadTexture(name, texture, options);
             } else {
-                this.uniform('1i', 'sampler2D', name, this.texureIndex);
-                this.textures[name].bind(this.texureIndex);
-                this.uniform('2f', 'vec2', name + 'Resolution', this.textures[name].width, this.textures[name].height);
-                this.texureIndex++;
+                return true;
             }
         }
     }, {
@@ -1751,6 +1775,7 @@ var GlslCanvas = function () {
                 }
                 this.width = this.canvas.clientWidth;
                 this.height = this.canvas.clientHeight;
+                this.resizeSwappableBuffers();
                 return true;
             } else {
                 return false;
@@ -1761,40 +1786,9 @@ var GlslCanvas = function () {
         value: function render() {
             this.visible = isCanvasVisible(this.canvas);
             if (this.forceRender || this.animated && this.visible && !this.paused) {
-
-                var date = new Date();
-                var now = performance.now();
-                this.timeDelta = (now - this.timePrev) / 1000.0;
-                this.timePrev = now;
-                if (this.nDelta > 1) {
-                    // set the delta time uniform
-                    this.uniform('1f', 'float', 'u_delta', this.timeDelta);
-                }
-
-                if (this.nTime > 1) {
-                    // set the elapsed time uniform
-                    this.uniform('1f', 'float', 'u_time', (now - this.timeLoad) / 1000.0);
-                }
-
-                if (this.nDate) {
-                    // Set date uniform: year/month/day/time_in_sec
-                    this.uniform('4f', 'float', 'u_date', date.getFullYear(), date.getMonth(), date.getDate(), date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds() + date.getMilliseconds() * 0.001);
-                }
-
-                // set the resolution uniform
-                this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
-
-                this.texureIndex = 0;
-                for (var tex in this.textures) {
-                    this.uniformTexture(tex);
-                }
-
-                // Draw the rectangle.
-                this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-
+                this.renderPrograms();
                 // Trigger event
                 this.trigger('render', {});
-
                 this.change = false;
                 this.forceRender = false;
             }
@@ -1812,7 +1806,243 @@ var GlslCanvas = function () {
     }, {
         key: 'version',
         value: function version() {
-            return '0.0.25';
+            return '0.0.27';
+        }
+
+        // render main and buffers programs
+
+    }, {
+        key: 'renderPrograms',
+        value: function renderPrograms() {
+            var gl = this.gl,
+                W = gl.canvas.width,
+                H = gl.canvas.height;
+            this.updateVariables();
+            gl.viewport(0, 0, W, H);
+            for (var key in this.buffers) {
+                var buffer = this.buffers[key];
+                this.updateUniforms(buffer.program, key);
+                buffer.bundle.render(W, H, buffer.program, buffer.name);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            }
+            this.updateUniforms(this.program, 'main');
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
+
+        // update glslCanvas variables
+
+    }, {
+        key: 'updateVariables',
+        value: function updateVariables() {
+            var glsl = this;
+            var date = new Date();
+            var now = performance.now();
+            var variables = this.variables || {};
+            variables.prev = variables.prev || now;
+            variables.delta = (now - variables.prev) / 1000.0;
+            variables.prev = now;
+            variables.load = glsl.timeLoad;
+            variables.time = (now - glsl.timeLoad) / 1000.0;
+            variables.year = date.getFullYear();
+            variables.month = date.getMonth();
+            variables.date = date.getDate();
+            variables.daytime = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds() + date.getMilliseconds() * 0.001;
+            this.variables = variables;
+        }
+
+        // update uniforms per program
+
+    }, {
+        key: 'updateUniforms',
+        value: function updateUniforms(program, key) {
+            var gl = this.gl,
+                variables = this.variables;
+            gl.useProgram(program);
+            if (this.nDelta > 1) {
+                // set the delta time uniform
+                gl.uniform1f(gl.getUniformLocation(program, 'u_delta'), variables.delta);
+            }
+            if (this.nTime > 1) {
+                // set the elapsed time uniform
+                gl.uniform1f(gl.getUniformLocation(program, 'u_time'), variables.time);
+            }
+            if (this.nDate) {
+                // Set date uniform: year/month/day/time_in_sec
+                gl.uniform4f(gl.getUniformLocation(program, 'u_date'), variables.year, variables.month, variables.date, variables.daytime);
+            }
+            // set the resolution uniform
+            gl.uniform2f(gl.getUniformLocation(program, 'u_resolution'), this.canvas.width, this.canvas.height);
+            // this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
+            for (var _key3 in this.buffers) {
+                var buffer = this.buffers[_key3];
+                gl.uniform1i(gl.getUniformLocation(program, buffer.name), buffer.bundle.input.index);
+            }
+            this.TEXTURE_COUNT = this.BUFFER_COUNT;
+            for (var name in this.textures) {
+                if (this.uniformTexture(name, null, {
+                    filtering: 'mipmap',
+                    repeat: true
+                })) {
+                    var texture = this.textures[name];
+                    gl.activeTexture(gl.TEXTURE0 + this.TEXTURE_COUNT);
+                    gl.bindTexture(gl.TEXTURE_2D, texture.texture);
+                    gl.uniform1i(gl.getUniformLocation(program, name), this.TEXTURE_COUNT);
+                    gl.uniform2f(gl.getUniformLocation(program, name + 'Resolution'), texture.width, texture.height);
+                    this.TEXTURE_COUNT++;
+                }
+            }
+        }
+
+        // parse input strings
+
+    }, {
+        key: 'getBuffers',
+        value: function getBuffers(fragString) {
+            var buffers = {};
+            if (fragString) {
+                fragString.replace(new RegExp('(defined\\s*\\(\\s*BUFFER_)(\\d+)\\s*\\)', 'g'), function (match, name, i) {
+                    buffers['u_buffer_' + i] = {
+                        fragment: '#define BUFFER_' + i + '\n' + fragString
+                    };
+                });
+            }
+            return buffers;
+        }
+
+        // load buffers programs
+
+    }, {
+        key: 'loadPrograms',
+        value: function loadPrograms(buffers) {
+            var glsl = this;
+            var gl = this.gl;
+            var i = 0;
+            var vertex = createShader(glsl, glsl.vertexString, gl.VERTEX_SHADER);
+            for (var key in buffers) {
+                var buffer = buffers[key];
+                var fragment = createShader(glsl, buffer.fragment, gl.FRAGMENT_SHADER, 1);
+                if (!fragment) {
+                    fragment = createShader(glsl, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', gl.FRAGMENT_SHADER);
+                    glsl.isValid = false;
+                } else {
+                    glsl.isValid = true;
+                }
+                var program = createProgram(glsl, [vertex, fragment]);
+                buffer.name = 'u_buffer_' + i;
+                buffer.program = program;
+                buffer.bundle = glsl.createSwappableBuffer(glsl.canvas.width, glsl.canvas.height, program);
+                gl.deleteShader(fragment);
+                i++;
+            }
+            gl.deleteShader(vertex);
+        }
+
+        // create an input / output swappable buffer
+
+    }, {
+        key: 'createSwappableBuffer',
+        value: function createSwappableBuffer(W, H, program) {
+            var input = this.createBuffer(W, H, program);
+            var output = this.createBuffer(W, H, program);
+            var gl = this.gl;
+            return {
+                input: input,
+                output: output,
+                swap: function swap() {
+                    var temp = input;
+                    input = output;
+                    output = temp;
+                    this.input = input;
+                    this.output = output;
+                },
+                render: function render(W, H, program, name) {
+                    gl.useProgram(program);
+                    gl.viewport(0, 0, W, H);
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, this.input.buffer);
+                    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.output.texture, 0);
+                    gl.drawArrays(gl.TRIANGLES, 0, 6);
+                    this.swap();
+                },
+                resize: function resize(W, H, program, name) {
+                    gl.useProgram(program);
+                    gl.viewport(0, 0, W, H);
+                    this.input.resize(W, H);
+                    this.output.resize(W, H);
+                }
+            };
+        }
+
+        // create a buffers
+
+    }, {
+        key: 'createBuffer',
+        value: function createBuffer(W, H, program) {
+            var gl = this.gl;
+            var index = this.BUFFER_COUNT;
+            this.BUFFER_COUNT += 2;
+            gl.getExtension('OES_texture_float');
+            var texture = gl.createTexture();
+            gl.activeTexture(gl.TEXTURE0 + index);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.FLOAT, null);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            var buffer = gl.createFramebuffer();
+            return {
+                index: index,
+                texture: texture,
+                buffer: buffer,
+                W: W,
+                H: H,
+                resize: function resize(W, H) {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, buffer);
+                    var minW = Math.min(W, this.W);
+                    var minH = Math.min(H, this.H);
+                    var pixels = new Float32Array(minW * minH * 4);
+                    gl.readPixels(0, 0, minW, minH, gl.RGBA, gl.FLOAT, pixels);
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                    var newIndex = index + 1;
+                    var newTexture = gl.createTexture();
+                    gl.activeTexture(gl.TEXTURE0 + newIndex);
+                    gl.bindTexture(gl.TEXTURE_2D, newTexture);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.FLOAT, null);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, minW, minH, gl.RGBA, gl.FLOAT, pixels);
+                    var newBuffer = gl.createFramebuffer();
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                    gl.deleteTexture(texture);
+                    gl.activeTexture(gl.TEXTURE0 + index);
+                    gl.bindTexture(gl.TEXTURE_2D, newTexture);
+                    index = this.index = index;
+                    texture = this.texture = newTexture;
+                    buffer = this.buffer = newBuffer;
+                    this.W = W;
+                    this.H = H;
+                }
+            };
+        }
+
+        // resize buffers on canvas resize
+        // consider applying a throttle of 50 ms on canvas resize
+        // to avoid requestAnimationFrame and Gl violations
+
+    }, {
+        key: 'resizeSwappableBuffers',
+        value: function resizeSwappableBuffers() {
+            var gl = this.gl;
+            var W = gl.canvas.width,
+                H = gl.canvas.height;
+            gl.viewport(0, 0, W, H);
+            for (var key in this.buffers) {
+                var buffer = this.buffers[key];
+                buffer.bundle.resize(W, H, buffer.program, buffer.name);
+            }
+            gl.useProgram(this.program);
         }
     }]);
     return GlslCanvas;

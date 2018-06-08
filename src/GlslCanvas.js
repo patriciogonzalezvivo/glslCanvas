@@ -22,12 +22,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 import xhr from 'xhr';
-
-import { setupWebGL, createShader, createProgram, parseUniforms } from './gl/gl';
 import Texture from './gl/Texture';
-
+import { createProgram, createShader, parseUniforms, setupWebGL } from './gl/gl';
 import { isCanvasVisible, isDiff } from './tools/common';
 import { subscribeMixin } from './tools/mixin';
+
+
 
 export default class GlslCanvas {
     constructor(canvas, contextOptions, options) {
@@ -43,9 +43,13 @@ export default class GlslCanvas {
         this.gl = undefined;
         this.program = undefined;
         this.textures = {};
+        this.buffers = {};
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
+
+        this.BUFFER_COUNT = 0;
+        this.TEXTURE_COUNT = 0;
 
         this.vertexString = contextOptions.vertexString || `
 #ifdef GL_ES
@@ -81,7 +85,7 @@ void main(){
         }
         this.gl = gl;
         this.timeLoad = this.timePrev = performance.now();
-        this.timeDelta = 0.;
+        this.timeDelta = 0.0;
         this.forceRender = true;
         this.paused = false;
 
@@ -154,8 +158,8 @@ void main(){
             if (sandbox.nMouse > 1) {
                 sandbox.setMouse(mouse);
             }
-            sandbox.render();
             sandbox.forceRender = sandbox.resize();
+            sandbox.render();
             window.requestAnimationFrame(RenderLoop);
         }
 
@@ -170,7 +174,7 @@ void main(){
         this.isValid = false;
         for (let tex in this.textures) {
             if (tex.destroy){
-                tex.destroy()
+                tex.destroy();
             }
         }
         this.textures = {};
@@ -179,11 +183,16 @@ void main(){
         }
         this.gl.useProgram(null);
         this.gl.deleteProgram(this.program);
+        for (let key in this.buffers) {
+            const buffer = this.buffers[key];
+            this.gl.deleteProgram(buffer.program);
+        }
         this.program = null;
         this.gl = null;
     }
 
     load (fragString, vertString) {
+
         // Load vertex shader if there is one
         if (vertString) {
             this.vertexString = vertString;
@@ -246,6 +255,12 @@ void main(){
         this.program = program;
         this.change = true;
 
+        const buffers = this.getBuffers(this.fragmentString);
+        if (Object.keys(buffers).length) {
+            this.loadPrograms(buffers);
+        }
+        this.buffers = buffers;
+        
         // Trigger event
         this.trigger('load', {});
 
@@ -371,7 +386,13 @@ void main(){
         if (mouse &&
             mouse.x && mouse.x >= rect.left && mouse.x <= rect.right &&
             mouse.y && mouse.y >= rect.top && mouse.y <= rect.bottom) {
-            this.uniform('2f', 'vec2', 'u_mouse', mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
+            for (let key in this.buffers) {
+                const buffer = this.buffers[key];
+                this.gl.useProgram(buffer.program);
+                this.gl.uniform2f(this.gl.getUniformLocation(buffer.program, 'u_mouse'), mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
+            }
+            this.gl.useProgram(this.program);
+            this.gl.uniform2f(this.gl.getUniformLocation(this.program, 'u_mouse'), mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
         }
     }
 
@@ -396,10 +417,7 @@ void main(){
             this.loadTexture(name, texture, options);
         }
         else {
-            this.uniform('1i', 'sampler2D', name, this.texureIndex);
-            this.textures[name].bind(this.texureIndex);
-            this.uniform('2f', 'vec2', name + 'Resolution', this.textures[name].width, this.textures[name].height);
-            this.texureIndex++;
+            return true;
         }
     }
 
@@ -426,9 +444,9 @@ void main(){
             }
             this.width = this.canvas.clientWidth;
             this.height = this.canvas.clientHeight;
+            this.resizeSwappableBuffers();
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -437,40 +455,9 @@ void main(){
         this.visible = isCanvasVisible(this.canvas);
         if (this.forceRender ||
             (this.animated && this.visible && ! this.paused)) {
-
-            let date = new Date();
-            let now = performance.now();
-            this.timeDelta =  (now - this.timePrev) / 1000.0;
-            this.timePrev = now;
-            if (this.nDelta > 1) {
-                // set the delta time uniform
-                this.uniform('1f', 'float', 'u_delta', this.timeDelta);
-            }
-
-            if (this.nTime > 1 ) {
-                // set the elapsed time uniform
-                this.uniform('1f', 'float', 'u_time', (now - this.timeLoad) / 1000.0);
-            }
-
-            if (this.nDate) {
-                // Set date uniform: year/month/day/time_in_sec
-                this.uniform('4f', 'float', 'u_date', date.getFullYear(), date.getMonth(), date.getDate(), date.getHours()*3600 + date.getMinutes()*60 + date.getSeconds() + date.getMilliseconds() * 0.001 );
-            }
-
-            // set the resolution uniform
-            this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
-
-            this.texureIndex = 0;
-            for (let tex in this.textures) {
-                this.uniformTexture(tex);
-            }
-
-            // Draw the rectangle.
-            this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-
+            this.renderPrograms();
             // Trigger event
             this.trigger('render', {});
-
             this.change = false;
             this.forceRender = false;
         }
@@ -485,8 +472,221 @@ void main(){
     }
 
     version() {
-        return '0.0.25';
+        return '0.0.27';
     }
+
+    // render main and buffers programs
+    renderPrograms() {
+        const gl = this.gl,
+            W = gl.canvas.width,
+            H = gl.canvas.height;
+        this.updateVariables();
+        gl.viewport(0, 0, W, H);
+        for (let key in this.buffers) {
+            const buffer = this.buffers[key];
+            this.updateUniforms(buffer.program, key);
+            buffer.bundle.render(W, H, buffer.program, buffer.name);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        }
+        this.updateUniforms(this.program, 'main');
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    // update glslCanvas variables
+    updateVariables() {
+        const glsl = this;
+        var date = new Date();
+        var now = performance.now();
+        const variables = this.variables || {};
+        variables.prev = variables.prev || now;
+        variables.delta = (now - variables.prev) / 1000.0;
+        variables.prev = now;
+        variables.load = glsl.timeLoad;
+        variables.time = (now - glsl.timeLoad) / 1000.0;
+        variables.year = date.getFullYear();
+        variables.month = date.getMonth();
+        variables.date = date.getDate();
+        variables.daytime = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds() + date.getMilliseconds() * 0.001;
+        this.variables = variables;
+    }
+
+    // update uniforms per program
+    updateUniforms(program, key) {
+        const gl = this.gl, variables = this.variables;
+        gl.useProgram(program);
+        if (this.nDelta > 1) {
+            // set the delta time uniform
+            gl.uniform1f(gl.getUniformLocation(program, 'u_delta'), variables.delta);
+        }
+        if (this.nTime > 1) {
+            // set the elapsed time uniform
+            gl.uniform1f(gl.getUniformLocation(program, 'u_time'), variables.time);
+        }
+        if (this.nDate) {
+            // Set date uniform: year/month/day/time_in_sec
+            gl.uniform4f(gl.getUniformLocation(program, 'u_date'), variables.year, variables.month, variables.date, variables.daytime);
+        }
+        // set the resolution uniform
+        gl.uniform2f(gl.getUniformLocation(program, 'u_resolution'), this.canvas.width, this.canvas.height);
+        // this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
+        for (let key in this.buffers) {
+            const buffer = this.buffers[key];
+            gl.uniform1i(gl.getUniformLocation(program, buffer.name), buffer.bundle.input.index);
+        }
+        this.TEXTURE_COUNT = this.BUFFER_COUNT;
+        for (let name in this.textures) {
+            if (this.uniformTexture(name, null, {
+                filtering: 'mipmap',
+                repeat: true,
+            })) {
+                const texture = this.textures[name];
+                gl.activeTexture(gl.TEXTURE0 + this.TEXTURE_COUNT);
+                gl.bindTexture(gl.TEXTURE_2D, texture.texture);
+                gl.uniform1i(gl.getUniformLocation(program, name), this.TEXTURE_COUNT);
+                gl.uniform2f(gl.getUniformLocation(program, name + 'Resolution'), texture.width, texture.height);
+                this.TEXTURE_COUNT ++;
+            }
+        }
+    }
+
+    // parse input strings
+    getBuffers(fragString) {
+        let buffers = {};
+        if (fragString) {
+            fragString.replace(new RegExp('(defined\\s*\\(\\s*BUFFER_)(\\d+)\\s*\\)', 'g'), function (match, name, i) {
+                buffers['u_buffer_' + i] = {
+                    fragment: '#define BUFFER_' + i + '\n' + fragString
+                };
+            });
+        }
+        return buffers;
+    }
+
+    // load buffers programs
+    loadPrograms(buffers) {
+        const glsl = this;
+        const gl = this.gl;
+        let i = 0;
+        const vertex = createShader(glsl, glsl.vertexString, gl.VERTEX_SHADER);
+        for (let key in buffers) {
+            const buffer = buffers[key];
+            let fragment = createShader(glsl, buffer.fragment, gl.FRAGMENT_SHADER, 1);
+            if (!fragment) {
+                fragment = createShader(glsl, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', gl.FRAGMENT_SHADER);
+                glsl.isValid = false;
+            } else {
+                glsl.isValid = true;
+            }
+            const program = createProgram(glsl, [vertex, fragment]);
+            buffer.name = 'u_buffer_' + i;
+            buffer.program = program;
+            buffer.bundle = glsl.createSwappableBuffer(glsl.canvas.width, glsl.canvas.height, program);
+            gl.deleteShader(fragment);
+            i++;
+        }
+        gl.deleteShader(vertex);
+    }
+
+    // create an input / output swappable buffer
+    createSwappableBuffer(W, H, program) {
+        var input = this.createBuffer(W, H, program);
+        var output = this.createBuffer(W, H, program);
+        const gl = this.gl;
+        return {
+            input: input,
+            output: output,
+            swap: function() {
+                var temp = input;
+                input = output;
+                output = temp;
+                this.input = input;
+                this.output = output;
+            },
+            render: function (W, H, program, name) {
+                gl.useProgram(program);
+                gl.viewport(0, 0, W, H);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, this.input.buffer);
+                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.output.texture, 0);
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+                this.swap();
+            },
+            resize: function (W, H, program, name) {
+                gl.useProgram(program);
+                gl.viewport(0, 0, W, H);
+                this.input.resize(W, H);
+                this.output.resize(W, H);
+            },
+        };
+    }
+
+    // create a buffers
+    createBuffer(W, H, program) {
+        const glsl = this;
+        const gl = this.gl;
+        let index = this.BUFFER_COUNT;
+        this.BUFFER_COUNT += 2;
+        gl.getExtension('OES_texture_float');
+        var texture = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0 + index);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.FLOAT, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        var buffer = gl.createFramebuffer();
+        return {
+            index: index,
+            texture: texture,
+            buffer: buffer,
+            W: W,
+            H: H,
+            resize: function(W, H) {
+                gl.bindFramebuffer(gl.FRAMEBUFFER, buffer);
+                var minW = Math.min(W, this.W);
+                var minH = Math.min(H, this.H);
+                var pixels = new Float32Array(minW * minH * 4);
+                gl.readPixels(0, 0, minW, minH, gl.RGBA, gl.FLOAT, pixels);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                var newIndex = index + 1;
+                var newTexture = gl.createTexture();
+                gl.activeTexture(gl.TEXTURE0 + newIndex);
+                gl.bindTexture(gl.TEXTURE_2D, newTexture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.FLOAT, null);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, minW, minH, gl.RGBA, gl.FLOAT, pixels);
+                var newBuffer = gl.createFramebuffer();
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                gl.deleteTexture(texture);
+                gl.activeTexture(gl.TEXTURE0 + index);
+                gl.bindTexture(gl.TEXTURE_2D, newTexture);
+                index = this.index = index;
+                texture = this.texture = newTexture;
+                buffer = this.buffer = newBuffer;
+                this.W = W;
+                this.H = H;
+            },
+        };
+    }
+
+    // resize buffers on canvas resize
+    // consider applying a throttle of 50 ms on canvas resize
+    // to avoid requestAnimationFrame and Gl violations
+    resizeSwappableBuffers() {
+        const gl = this.gl;
+        const W = gl.canvas.width,
+            H = gl.canvas.height;
+        gl.viewport(0, 0, W, H);
+        for (let key in this.buffers) {
+            const buffer = this.buffers[key];
+            buffer.bundle.resize(W, H, buffer.program, buffer.name);
+        }
+        gl.useProgram(this.program);
+    }
+
 }
 
 function loadAllGlslCanvas() {
