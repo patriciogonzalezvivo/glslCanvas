@@ -1,6 +1,6 @@
 {
     "name": "glslCanvas",
-    "version": "0.0.27",
+    "version": "0.1.0",
     "description": "Simple GLSL Fragment Shader Sandbox",
     "main": "lib/GlslCanvas.js",
     "module": "dist/GlslCanvas.es.js",
