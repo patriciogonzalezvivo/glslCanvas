@@ -255,6 +255,7 @@ void main(){
         this.program = program;
         this.change = true;
 
+        this.BUFFER_COUNT = 0;
         const buffers = this.getBuffers(this.fragmentString);
         if (Object.keys(buffers).length) {
             this.loadPrograms(buffers);
