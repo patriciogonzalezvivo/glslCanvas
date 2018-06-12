@@ -554,7 +554,7 @@ void main(){
         let buffers = {};
         if (fragString) {
             fragString.replace(new RegExp('(defined\\s*\\(\\s*BUFFER_)(\\d+)\\s*\\)', 'g'), function (match, name, i) {
-                buffers['u_buffer_' + i] = {
+                buffers['u_buffer' + i] = {
                     fragment: '#define BUFFER_' + i + '\n' + fragString
                 };
             });
@@ -578,7 +578,7 @@ void main(){
                 glsl.isValid = true;
             }
             const program = createProgram(glsl, [vertex, fragment]);
-            buffer.name = 'u_buffer_' + i;
+            buffer.name = 'u_buffer' + i;
             buffer.program = program;
             buffer.bundle = glsl.createSwappableBuffer(glsl.canvas.width, glsl.canvas.height, program);
             gl.deleteShader(fragment);

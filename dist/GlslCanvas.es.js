@@ -364,8 +364,6 @@ function subscribeMixin$1(target) {
 }
 
 // Texture management
-// GL texture wrapper object for keeping track of a global set of textures, keyed by a unique user-defined name
-
 var Texture = function () {
     function Texture(gl, name) {
         var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -659,6 +657,9 @@ var Texture = function () {
     }]);
     return Texture;
 }();
+
+// Report max texture size for a GL context
+
 
 Texture.getMaxTextureSize = function (gl) {
     return gl.getParameter(gl.MAX_TEXTURE_SIZE);
@@ -1504,7 +1505,7 @@ var GlslCanvas = function () {
             var buffers = {};
             if (fragString) {
                 fragString.replace(new RegExp('(defined\\s*\\(\\s*BUFFER_)(\\d+)\\s*\\)', 'g'), function (match, name, i) {
-                    buffers['u_buffer_' + i] = {
+                    buffers['u_buffer' + i] = {
                         fragment: '#define BUFFER_' + i + '\n' + fragString
                     };
                 });
@@ -1531,7 +1532,7 @@ var GlslCanvas = function () {
                     glsl.isValid = true;
                 }
                 var program = createProgram(glsl, [vertex, fragment]);
-                buffer.name = 'u_buffer_' + i;
+                buffer.name = 'u_buffer' + i;
                 buffer.program = program;
                 buffer.bundle = glsl.createSwappableBuffer(glsl.canvas.width, glsl.canvas.height, program);
                 gl.deleteShader(fragment);
