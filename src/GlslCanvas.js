@@ -22,8 +22,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 import xhr from 'xhr';
-import Texture from './gl/Texture';
 import { createProgram, createShader, parseUniforms, setupWebGL } from './gl/gl';
+import Texture from './gl/Texture';
 import { isCanvasVisible, isDiff } from './tools/common';
 import { subscribeMixin } from './tools/mixin';
 
@@ -559,10 +559,8 @@ void main(){
     getBuffers(fragString) {
         let buffers = {};
         if (fragString) {
-            fragString.replace(new RegExp('(\\#ifdef\\s*BUFFER_|defined\\s*\\(\\s*BUFFER_)(\\d+)\\s*\\)', 'g'), function (match, name, i) {
-                console.log('match:', match);
-                console.log('name:', name);
-                console.log('i:', i)
+            fragString.replace(/(?:^\s*)((?:#if|#elif)(?:\s*)(defined\s*\(\s*BUFFER_)(\d+)(?:\s*\))|(?:#ifdef)(?:\s*BUFFER_)(\d+)(?:\s*))/gm, function () {
+                const i = arguments[3] || arguments[4];
                 buffers['u_buffer' + i] = {
                     fragment: '#define BUFFER_' + i + '\n' + fragString
                 };
