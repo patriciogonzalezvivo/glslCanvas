@@ -88,6 +88,7 @@ void main(){
         this.timeDelta = 0.0;
         this.forceRender = true;
         this.paused = false;
+        this.realToCSSPixels = window.devicePixelRatio || 1;
 
         // Allow alpha
         canvas.style.backgroundColor = contextOptions.backgroundColor || 'rgba(1,1,1,0)';
@@ -255,6 +256,7 @@ void main(){
         this.program = program;
         this.change = true;
 
+        this.BUFFER_COUNT = 0;
         const buffers = this.getBuffers(this.fragmentString);
         if (Object.keys(buffers).length) {
             this.loadPrograms(buffers);
@@ -386,13 +388,17 @@ void main(){
         if (mouse &&
             mouse.x && mouse.x >= rect.left && mouse.x <= rect.right &&
             mouse.y && mouse.y >= rect.top && mouse.y <= rect.bottom) {
+
+            let mouse_x = (mouse.x * this.realToCSSPixels - rect.left );
+            let mouse_y = (this.canvas.height - (mouse.y * this.realToCSSPixels - rect.top));
+
             for (let key in this.buffers) {
                 const buffer = this.buffers[key];
                 this.gl.useProgram(buffer.program);
-                this.gl.uniform2f(this.gl.getUniformLocation(buffer.program, 'u_mouse'), mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
+                this.gl.uniform2f(this.gl.getUniformLocation(buffer.program, 'u_mouse'), mouse_x, mouse_y);
             }
             this.gl.useProgram(this.program);
-            this.gl.uniform2f(this.gl.getUniformLocation(this.program, 'u_mouse'), mouse.x - rect.left, this.canvas.height - (mouse.y - rect.top));
+            this.gl.uniform2f(this.gl.getUniformLocation(this.program, 'u_mouse'), mouse_x, mouse_y);
         }
     }
 
@@ -424,13 +430,13 @@ void main(){
     resize() {
         if (this.width !== this.canvas.clientWidth ||
             this.height !== this.canvas.clientHeight) {
-            let realToCSSPixels = window.devicePixelRatio || 1;
+            this.realToCSSPixels = window.devicePixelRatio || 1;
 
             // Lookup the size the browser is displaying the canvas in CSS pixels
             // and compute a size needed to make our drawingbuffer match it in
             // device pixels.
-            let displayWidth = Math.floor(this.gl.canvas.clientWidth * realToCSSPixels);
-            let displayHeight = Math.floor(this.gl.canvas.clientHeight * realToCSSPixels);
+            let displayWidth = Math.floor(this.gl.canvas.clientWidth * this.realToCSSPixels);
+            let displayHeight = Math.floor(this.gl.canvas.clientHeight * this.realToCSSPixels);
 
             // Check if the canvas is not the same size.
             if (this.gl.canvas.width !== displayWidth ||
@@ -553,7 +559,10 @@ void main(){
     getBuffers(fragString) {
         let buffers = {};
         if (fragString) {
-            fragString.replace(new RegExp('(defined\\s*\\(\\s*BUFFER_)(\\d+)\\s*\\)', 'g'), function (match, name, i) {
+            fragString.replace(new RegExp('(\\#ifdef\\s*BUFFER_|defined\\s*\\(\\s*BUFFER_)(\\d+)\\s*\\)', 'g'), function (match, name, i) {
+                console.log('match:', match);
+                console.log('name:', name);
+                console.log('i:', i)
                 buffers['u_buffer' + i] = {
                     fragment: '#define BUFFER_' + i + '\n' + fragString
                 };

@@ -27,13 +27,25 @@ uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
 
-uniform sampler2D u_tex0;
+uniform sampler2D u_tex0; // data/moon.jpg
 uniform vec2 u_tex0Resolution; 
 
 uniform sampler2D u_buffer0;
 uniform sampler2D u_buffer1;
 
-float speedMoon = 0.01;
+vec2 scale(vec2 st, float s) {
+    return (st-.5)*s+.5;
+}
+
+vec2 ratio(in vec2 st, in vec2 s) {
+    return mix( vec2((st.x*s.x/s.y)-(s.x*.5-s.y*.5)/s.y,st.y),
+                vec2(st.x,st.y*(s.y/s.x)-(s.y*.5-s.x*.5)/s.x),
+                step(s.x,s.y));
+}
+
+float circleSDF(vec2 st) {
+    return length(st - 0.5) * 2.0;
+}
 
 vec2 sphereCoords(vec2 _st, float _scale){
     float maxFactor = sin(1.570796327);
@@ -53,10 +65,10 @@ vec2 sphereCoords(vec2 _st, float _scale){
     return uv;
 }
 
-vec4 sphereTexture(in sampler2D _tex, in vec2 _uv) {
+vec4 sphereTexture(in sampler2D _tex, in vec2 _uv, float _time) {
     vec2 st = sphereCoords(_uv, 1.0);
     float aspect = u_tex0Resolution.y/u_tex0Resolution.x;
-    st.x = fract(st.x*aspect + u_time*speedMoon);
+    st.x = fract(st.x * aspect + _time);
     return texture2D(_tex, st);
 }
 
@@ -95,23 +107,16 @@ void main() {
 #else
     // Main Buffer
     vec4 ripples = texture2D(u_buffer1, uv);
-    float offset = ripples.r - .5;
+    float offset = ripples.r - 0.5;
 
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
-    st = (st-.5) * 2.0 +.5;
-
-    if (u_resolution.y > u_resolution.x ) {
-        st.y *= u_resolution.y/u_resolution.x;
-        st.y -= (u_resolution.y*.5-u_resolution.x*.5)/u_resolution.x;
-    } else {
-        st.x *= u_resolution.x/u_resolution.y;
-        st.x -= (u_resolution.x*.5-u_resolution.y*.5)/u_resolution.y;
-    }
+    st = scale(st, 2.0);
+    st = ratio(st, u_resolution);
 
     st += offset;
-    vec4 color = sphereTexture(u_tex0, st);
-    float radius = 1.0-length( vec2(0.5)-st )*2.0;
-    color.rgb *= smoothstep(0.001,0.02,radius);
+    vec4 color = sphereTexture(u_tex0, st, u_time * 0.01);
+    float radius = 1.0 - circleSDF(st);
+    color.rgb *= smoothstep(0.001, 0.02, radius);
     color.rgb += (ripples.r - .5) * 2.;
 
     gl_FragColor = color;
@@ -124,12 +129,7 @@ void main() {
 </body>
 <script>
     var canvas = document.getElementById("glslCanvas");
-    console.log(canvas.getAttribute('data-fragment'));
     var sandbox = new GlslCanvas(canvas);
-    sandbox.uniformTexture('u_tex0', 'https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/data/moon.jpg', {
-        filtering: 'mipmap',
-        repeat: true,
-    });
     var texCounter = 0;
     var sandbox_content = "";
     var sandbox_title = "";
