@@ -389,8 +389,8 @@ void main(){
             mouse.x && mouse.x >= rect.left && mouse.x <= rect.right &&
             mouse.y && mouse.y >= rect.top && mouse.y <= rect.bottom) {
 
-            let mouse_x = (mouse.x * this.realToCSSPixels - rect.left );
-            let mouse_y = (this.canvas.height - (mouse.y * this.realToCSSPixels - rect.top));
+            let mouse_x = (mouse.x - rect.left ) * this.realToCSSPixels;
+            let mouse_y = (this.canvas.height - (mouse.y - rect.top) * this.realToCSSPixels);
 
             for (let key in this.buffers) {
                 const buffer = this.buffers[key];
