@@ -27,8 +27,6 @@ import Texture from './gl/Texture';
 import { isCanvasVisible, isDiff } from './tools/common';
 import { subscribeMixin } from './tools/mixin';
 
-
-
 export default class GlslCanvas {
     constructor(canvas, contextOptions, options) {
         subscribeMixin(this);
@@ -377,9 +375,9 @@ void main(){
             }
             else {
                 this.uniform(parsed[u].method, parsed[u].type, parsed[u].name, parsed[u].value);
-                this.forceRender = true;
             }
         }
+        this.forceRender = true;
     }
 
     setMouse(mouse) {
@@ -461,7 +459,9 @@ void main(){
         this.visible = isCanvasVisible(this.canvas);
         if (this.forceRender ||
             (this.animated && this.visible && ! this.paused)) {
+
             this.renderPrograms();
+
             // Trigger event
             this.trigger('render', {});
             this.change = false;
@@ -477,23 +477,21 @@ void main(){
         this.paused = false;
     }
 
-    version() {
-        return '0.0.27';
-    }
-
     // render main and buffers programs
     renderPrograms() {
-        const gl = this.gl,
-            W = gl.canvas.width,
-            H = gl.canvas.height;
+        const gl = this.gl;
+        const W = gl.canvas.width;
+        const H = gl.canvas.height;
         this.updateVariables();
         gl.viewport(0, 0, W, H);
+
         for (let key in this.buffers) {
             const buffer = this.buffers[key];
             this.updateUniforms(buffer.program, key);
             buffer.bundle.render(W, H, buffer.program, buffer.name);
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }
+
         this.updateUniforms(this.program, 'main');
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
@@ -694,6 +692,9 @@ void main(){
         gl.useProgram(this.program);
     }
 
+    version() {
+        return '0.1.4';
+    }
 }
 
 function loadAllGlslCanvas() {
