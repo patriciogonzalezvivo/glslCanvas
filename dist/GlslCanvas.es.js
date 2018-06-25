@@ -645,8 +645,6 @@ function subscribeMixin$1(target) {
 }
 
 // Texture management
-// GL texture wrapper object for keeping track of a global set of textures, keyed by a unique user-defined name
-
 var Texture = function () {
     function Texture(gl, name) {
         var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -941,6 +939,9 @@ var Texture = function () {
     return Texture;
 }();
 
+// Report max texture size for a GL context
+
+
 Texture.getMaxTextureSize = function (gl) {
     return gl.getParameter(gl.MAX_TEXTURE_SIZE);
 };
@@ -1183,12 +1184,10 @@ var GlslCanvas = function () {
             }
             this.buffers = buffers;
             this.texureIndex = this.BUFFER_COUNT;
-            // console.log('this.BUFFER_COUNT', this.BUFFER_COUNT);
 
             // Trigger event
-            this.trigger('load', {});
-
             this.forceRender = true;
+            this.trigger('load', {});
         }
     }, {
         key: 'test',
@@ -1338,7 +1337,7 @@ var GlslCanvas = function () {
             }
 
             var change = isDiff(uniform.value, value);
-            // console.log(uniform.value, value);
+
             // remember and keep track of uniforms location to save calls
             if (change || this.change || !uniform.location || !uniform.value) {
                 uniform.name = name;
@@ -1364,8 +1363,7 @@ var GlslCanvas = function () {
                 this.loadTexture(name, texture, options);
             } else {
                 this.uniform('1i', 'sampler2D', name, this.texureIndex);
-                // this.textures[name].bind(this.texureIndex);
-                // console.log('bind', this.texureIndex);
+
                 for (var key in this.buffers) {
                     var buffer = this.buffers[key];
                     this.gl.useProgram(buffer.program);
@@ -1435,19 +1433,15 @@ var GlslCanvas = function () {
                 // set the resolution uniform
                 this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
 
-                // this.texureIndex = 0;
                 for (var key in this.buffers) {
                     var buffer = this.buffers[key];
-                    // console.log (buffer.name, buffer.bundle.input.index)
                     this.uniform('1i', 'sampler2D', buffer.name, buffer.bundle.input.index);
-                    // this.texureIndex++;
                 }
 
                 this.texureIndex = this.BUFFER_COUNT;
                 for (var tex in this.textures) {
                     this.uniformTexture(tex);
                     this.texureIndex++;
-                    // console.log(this.BUFFER_COUNT, this.texureIndex);
                 }
 
                 this.renderPrograms();
@@ -1489,45 +1483,6 @@ var GlslCanvas = function () {
             gl.useProgram(this.program);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
         }
-
-        // // update uniforms per program
-        // updateUniforms(program, key) {
-        //     const gl = this.gl, variables = this.variables;
-        //     gl.useProgram(program);
-        //     if (this.nDelta > 1) {
-        //         // set the delta time uniform
-        //         gl.uniform1f(gl.getUniformLocation(program, 'u_delta'), variables.delta);
-        //     }
-        //     if (this.nTime > 1) {
-        //         // set the elapsed time uniform
-        //         gl.uniform1f(gl.getUniformLocation(program, 'u_time'), variables.time);
-        //     }
-        //     if (this.nDate) {
-        //         // Set date uniform: year/month/day/time_in_sec
-        //         gl.uniform4f(gl.getUniformLocation(program, 'u_date'), variables.year, variables.month, variables.date, variables.daytime);
-        //     }
-        //     // set the resolution uniform
-        //     gl.uniform2f(gl.getUniformLocation(program, 'u_resolution'), this.canvas.width, this.canvas.height);
-        //     // this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
-        //     for (let key in this.buffers) {
-        //         const buffer = this.buffers[key];
-        //         gl.uniform1i(gl.getUniformLocation(program, buffer.name), buffer.bundle.input.index);
-        //     }
-        //     this.TEXTURE_COUNT = this.BUFFER_COUNT;
-        //     for (let name in this.textures) {
-        //         if (this.uniformTexture(name, null, {
-        //             filtering: 'mipmap',
-        //             repeat: true,
-        //         })) {
-        //             const texture = this.textures[name];
-        //             gl.activeTexture(gl.TEXTURE0 + this.TEXTURE_COUNT);
-        //             gl.bindTexture(gl.TEXTURE_2D, texture.texture);
-        //             gl.uniform1i(gl.getUniformLocation(program, name), this.TEXTURE_COUNT);
-        //             gl.uniform2f(gl.getUniformLocation(program, name + 'Resolution'), texture.width, texture.height);
-        //             this.TEXTURE_COUNT ++;
-        //         }
-        //     }
-        // }
 
         // parse input strings
 
@@ -1682,7 +1637,7 @@ var GlslCanvas = function () {
     }, {
         key: 'version',
         value: function version() {
-            return '0.1.4';
+            return '0.1.5';
         }
     }]);
     return GlslCanvas;
