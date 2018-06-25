@@ -1485,7 +1485,11 @@ var GlslCanvas = function () {
             if (sandbox.nMouse > 1) {
                 sandbox.setMouse(mouse);
             }
-            sandbox.forceRender = sandbox.resize();
+
+            if (sandbox.resize()) {
+                sandbox.forceRender = true;
+            }
+
             sandbox.render();
             window.requestAnimationFrame(RenderLoop);
         }
@@ -2042,7 +2046,7 @@ var GlslCanvas = function () {
     }, {
         key: 'version',
         value: function version() {
-            return '0.1.5';
+            return '0.1.6';
         }
     }]);
     return GlslCanvas;

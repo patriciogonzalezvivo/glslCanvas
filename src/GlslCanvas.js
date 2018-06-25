@@ -157,7 +157,11 @@ void main(){
             if (sandbox.nMouse > 1) {
                 sandbox.setMouse(mouse);
             }
-            sandbox.forceRender = sandbox.resize();
+
+            if (sandbox.resize()) {
+                sandbox.forceRender = true;
+            }
+            
             sandbox.render();
             window.requestAnimationFrame(RenderLoop);
         }
@@ -679,7 +683,7 @@ void main(){
     }
 
     version() {
-        return '0.1.5';
+        return '0.1.6';
     }
 }
 
