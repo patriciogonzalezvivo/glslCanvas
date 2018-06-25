@@ -260,6 +260,8 @@ void main(){
             this.loadPrograms(buffers);
         }
         this.buffers = buffers;
+        this.texureIndex = this.BUFFER_COUNT;
+        // console.log('this.BUFFER_COUNT', this.BUFFER_COUNT);
         
         // Trigger event
         this.trigger('load', {});
@@ -394,30 +396,22 @@ void main(){
         }
     }
 
-	// ex: program.uniform('3f', 'position', x, y, z);
+    // ex: program.uniform('3f', 'position', x, y, z);
     uniform (method, type, name, ...value) { // 'value' is a method-appropriate arguments list
-        this.uniforms[name] = this.uniforms[name] || {};
+        this.uniforms[name] = this.uniforms[name] || {}; 
         let uniform = this.uniforms[name];
         let change = isDiff(uniform.value, value);
-
+        // console.log(uniform.value, value);
         // remember and keep track of uniforms location to save calls
-        if ( change || this.change || !uniform.location || !uniform.value ) {
+        if (change || this.change || !uniform.location || !uniform.value) {
             uniform.name = name;
             uniform.type = type;
             uniform.value = value;
             uniform.method = 'uniform' + method;
-
             this.gl.useProgram(this.program);
             uniform.location = this.gl.getUniformLocation(this.program, name);
             this.gl[uniform.method].apply(this.gl, [uniform.location].concat(uniform.value));
-        }
-
-        console.log(uniform);
-
-        // If there is change update and there is buffer update manually one by one
-        if (change || this.change) {
-            // TODO: 
-            //  - this can be optimize to rememeber locations
+            // If there is change update and there is buffer update manually one by one
             for (let key in this.buffers) {
                 let buffer = this.buffers[key];
                 this.gl.useProgram(buffer.program);
@@ -433,9 +427,18 @@ void main(){
         }
         else {
             this.uniform('1i', 'sampler2D', name, this.texureIndex);
-            this.textures[name].bind(this.texureIndex);
+            // this.textures[name].bind(this.texureIndex);
+            // console.log('bind', this.texureIndex);
+            for (let key in this.buffers) {
+                const buffer = this.buffers[key];
+                this.gl.useProgram(buffer.program);
+                this.gl.activeTexture(this.gl.TEXTURE0 + this.texureIndex);
+                this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[name].texture);
+            }
+            this.gl.useProgram(this.program);
+            this.gl.activeTexture(this.gl.TEXTURE0 + this.texureIndex);
+            this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[name].texture);
             this.uniform('2f', 'vec2', name + 'Resolution', this.textures[name].width, this.textures[name].height);
-            this.texureIndex++;
         }
     }
 
@@ -499,7 +502,7 @@ void main(){
             // this.texureIndex = 0;
             for (let key in this.buffers) {
                 const buffer = this.buffers[key];
-                console.log (buffer.name, buffer.bundle.input.index)
+                // console.log (buffer.name, buffer.bundle.input.index)
                 this.uniform('1i', 'sampler2D', buffer.name, buffer.bundle.input.index);
                 // this.texureIndex++;
             }
@@ -507,6 +510,8 @@ void main(){
             this.texureIndex = this.BUFFER_COUNT;
             for (let tex in this.textures) {
                 this.uniformTexture(tex);
+                this.texureIndex++;
+                // console.log(this.BUFFER_COUNT, this.texureIndex);
             }
 
             this.renderPrograms();
@@ -540,6 +545,7 @@ void main(){
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }
 
+        gl.useProgram(this.program);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
@@ -600,7 +606,6 @@ void main(){
     loadPrograms(buffers) {
         const glsl = this;
         const gl = this.gl;
-        let i = 0;
         const vertex = createShader(glsl, glsl.vertexString, gl.VERTEX_SHADER);
         for (let key in buffers) {
             const buffer = buffers[key];
@@ -612,11 +617,10 @@ void main(){
                 glsl.isValid = true;
             }
             const program = createProgram(glsl, [vertex, fragment]);
-            buffer.name = 'u_buffer' + i;
+            buffer.name = key;
             buffer.program = program;
             buffer.bundle = glsl.createSwappableBuffer(glsl.canvas.width, glsl.canvas.height, program);
             gl.deleteShader(fragment);
-            i++;
         }
         gl.deleteShader(vertex);
     }
@@ -655,7 +659,6 @@ void main(){
 
     // create a buffers
     createBuffer(W, H, program) {
-        const glsl = this;
         const gl = this.gl;
         let index = this.BUFFER_COUNT;
         this.BUFFER_COUNT += 2;

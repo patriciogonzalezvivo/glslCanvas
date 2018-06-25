@@ -1183,6 +1183,8 @@ var GlslCanvas = function () {
                 this.loadPrograms(buffers);
             }
             this.buffers = buffers;
+            this.texureIndex = this.BUFFER_COUNT;
+            // console.log('this.BUFFER_COUNT', this.BUFFER_COUNT);
 
             // Trigger event
             this.trigger('load', {});
@@ -1337,25 +1339,17 @@ var GlslCanvas = function () {
             }
 
             var change = isDiff(uniform.value, value);
-
+            // console.log(uniform.value, value);
             // remember and keep track of uniforms location to save calls
             if (change || this.change || !uniform.location || !uniform.value) {
                 uniform.name = name;
                 uniform.type = type;
                 uniform.value = value;
                 uniform.method = 'uniform' + method;
-
                 this.gl.useProgram(this.program);
                 uniform.location = this.gl.getUniformLocation(this.program, name);
                 this.gl[uniform.method].apply(this.gl, [uniform.location].concat(uniform.value));
-            }
-
-            console.log(uniform);
-
-            // If there is change update and there is buffer update manually one by one
-            if (change || this.change) {
-                // TODO: 
-                //  - this can be optimize to rememeber locations
+                // If there is change update and there is buffer update manually one by one
                 for (var key in this.buffers) {
                     var buffer = this.buffers[key];
                     this.gl.useProgram(buffer.program);
@@ -1371,9 +1365,18 @@ var GlslCanvas = function () {
                 this.loadTexture(name, texture, options);
             } else {
                 this.uniform('1i', 'sampler2D', name, this.texureIndex);
-                this.textures[name].bind(this.texureIndex);
+                // this.textures[name].bind(this.texureIndex);
+                // console.log('bind', this.texureIndex);
+                for (var key in this.buffers) {
+                    var buffer = this.buffers[key];
+                    this.gl.useProgram(buffer.program);
+                    this.gl.activeTexture(this.gl.TEXTURE0 + this.texureIndex);
+                    this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[name].texture);
+                }
+                this.gl.useProgram(this.program);
+                this.gl.activeTexture(this.gl.TEXTURE0 + this.texureIndex);
+                this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[name].texture);
                 this.uniform('2f', 'vec2', name + 'Resolution', this.textures[name].width, this.textures[name].height);
-                this.texureIndex++;
             }
         }
     }, {
@@ -1436,7 +1439,7 @@ var GlslCanvas = function () {
                 // this.texureIndex = 0;
                 for (var key in this.buffers) {
                     var buffer = this.buffers[key];
-                    console.log(buffer.name, buffer.bundle.input.index);
+                    // console.log (buffer.name, buffer.bundle.input.index)
                     this.uniform('1i', 'sampler2D', buffer.name, buffer.bundle.input.index);
                     // this.texureIndex++;
                 }
@@ -1444,6 +1447,8 @@ var GlslCanvas = function () {
                 this.texureIndex = this.BUFFER_COUNT;
                 for (var tex in this.textures) {
                     this.uniformTexture(tex);
+                    this.texureIndex++;
+                    // console.log(this.BUFFER_COUNT, this.texureIndex);
                 }
 
                 this.renderPrograms();
@@ -1482,6 +1487,7 @@ var GlslCanvas = function () {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             }
 
+            gl.useProgram(this.program);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
         }
 
@@ -1548,7 +1554,6 @@ var GlslCanvas = function () {
         value: function loadPrograms(buffers) {
             var glsl = this;
             var gl = this.gl;
-            var i = 0;
             var vertex = createShader(glsl, glsl.vertexString, gl.VERTEX_SHADER);
             for (var key in buffers) {
                 var buffer = buffers[key];
@@ -1560,11 +1565,10 @@ var GlslCanvas = function () {
                     glsl.isValid = true;
                 }
                 var program = createProgram(glsl, [vertex, fragment]);
-                buffer.name = 'u_buffer' + i;
+                buffer.name = key;
                 buffer.program = program;
                 buffer.bundle = glsl.createSwappableBuffer(glsl.canvas.width, glsl.canvas.height, program);
                 gl.deleteShader(fragment);
-                i++;
             }
             gl.deleteShader(vertex);
         }
