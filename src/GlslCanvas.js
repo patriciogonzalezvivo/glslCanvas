@@ -267,8 +267,10 @@ void main(){
         this.texureIndex = this.BUFFER_COUNT;
         
         // Trigger event
-        this.forceRender = true;
         this.trigger('load', {});
+
+        this.forceRender = true;
+        this.render();
     }
 
     test (callback, fragString, vertString) {
@@ -474,8 +476,8 @@ void main(){
 
     render () {
         this.visible = isCanvasVisible(this.canvas);
-        if (this.forceRender ||
-            (this.animated && this.visible && ! this.paused)) {
+        if ( this.forceRender || this.change ||
+            (this.animated && this.visible && ! this.paused) ) {
 
             // Update Uniforms when are need
             let date = new Date();
@@ -683,7 +685,7 @@ void main(){
     }
 
     version() {
-        return '0.1.6';
+        return '0.1.7';
     }
 }
 
