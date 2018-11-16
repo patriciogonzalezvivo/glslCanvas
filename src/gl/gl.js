@@ -59,7 +59,7 @@ export const ERROR_OTHER = 2;
  *     creation attributes you want to pass in.
  * @return {WebGLRenderingContext} The created context.
  */
-export function setupWebGL (canvas, optAttribs, onError) {
+export function setupWebGL (canvas, optAttribs, options) {
     function showLink(str) {
         let container = canvas.parentNode;
         if (container) {
@@ -68,8 +68,8 @@ export function setupWebGL (canvas, optAttribs, onError) {
     }
 
     function handleError(errorCode, msg) {
-        if (typeof onError === 'function') {
-            onError(errorCode);
+        if (typeof options.onError === 'function') {
+            options.onError(errorCode);
         } else {
             showLink(msg);
         }

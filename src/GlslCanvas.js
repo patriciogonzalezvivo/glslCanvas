@@ -31,8 +31,15 @@ export default class GlslCanvas {
     constructor(canvas, contextOptions, options) {
         subscribeMixin(this);
 
-        contextOptions = contextOptions || {};
-        options = options || {};
+        contextOptions = Object.assign({}, contextOptions);
+        options = Object.assign({}, options);
+
+        ['vertexString', 'backgroundColor', 'fragmentString'].forEach((property) => {
+            if (property in contextOptions) {
+                console.warn(`Property ${property} should be used in options - not in contextOptions`);
+                options[property] = contextOptions[property];
+            }
+        });
 
         this.width = canvas.clientWidth;
         this.height = canvas.clientHeight;
@@ -49,7 +56,7 @@ export default class GlslCanvas {
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
 
-        this.vertexString = contextOptions.vertexString || `
+        this.vertexString = options.vertexString || `
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -64,7 +71,7 @@ void main() {
     v_texcoord = a_texcoord;
 }
 `;
-        this.fragmentString = contextOptions.fragmentString || `
+        this.fragmentString = options.fragmentString || `
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -77,7 +84,7 @@ void main(){
 `;
 
         // GL Context
-        let gl = setupWebGL(canvas, contextOptions, options.onError);
+        let gl = setupWebGL(canvas, contextOptions, options);
         if (!gl) {
             return;
         }
@@ -89,7 +96,7 @@ void main(){
         this.realToCSSPixels = window.devicePixelRatio || 1;
 
         // Allow alpha
-        canvas.style.backgroundColor = contextOptions.backgroundColor || 'rgba(1,1,1,0)';
+        canvas.style.backgroundColor = options.backgroundColor || 'rgba(1,1,1,0)';
 
         // Load shader
         if (canvas.hasAttribute('data-fragment')) {
@@ -161,7 +168,7 @@ void main(){
             if (sandbox.resize()) {
                 sandbox.forceRender = true;
             }
-            
+
             sandbox.render();
             window.requestAnimationFrame(RenderLoop);
         }
@@ -265,7 +272,7 @@ void main(){
         }
         this.buffers = buffers;
         this.texureIndex = this.BUFFER_COUNT;
-        
+
         // Trigger event
         this.trigger('load', {});
 
@@ -402,7 +409,7 @@ void main(){
 
     // ex: program.uniform('3f', 'position', x, y, z);
     uniform (method, type, name, ...value) { // 'value' is a method-appropriate arguments list
-        this.uniforms[name] = this.uniforms[name] || {}; 
+        this.uniforms[name] = this.uniforms[name] || {};
         let uniform = this.uniforms[name];
         let change = isDiff(uniform.value, value);
 
