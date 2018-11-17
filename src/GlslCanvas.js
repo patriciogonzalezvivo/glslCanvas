@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import xhr from 'xhr';
 import { createProgram, createShader, parseUniforms, setupWebGL } from './gl/gl';
 import Texture from './gl/Texture';
+import getDefaultShaderStrings from './tools/getDefaultShaderStrings';
 import { isCanvasVisible, isDiff } from './tools/common';
 import { subscribeMixin } from './tools/mixin';
 
@@ -41,9 +42,23 @@ export default class GlslCanvas {
             }
         });
 
+        if (canvas.hasAttribute('data-webgl')) {
+            options.webglVersion = parseInt(canvas.getAttribute('data-webgl'), 10);
+        } else {
+            options.webglVersion = options.webglVersion || 1;
+        }
+
+        if (canvas.hasAttribute('data-glsl')) {
+            options.glslVersion = parseInt(canvas.getAttribute('data-glsl'), 10);
+        } else {
+            options.glslVersion = options.glslVersion || (options.webglVersion === 2 ? 300 : 100);
+        }
+
         this.width = canvas.clientWidth;
         this.height = canvas.clientHeight;
 
+        this.webglVersion = options.webglVersion === 2 ? 2 : 1;
+        this.glslVersion = options.glslVersion === 300 ? 300 : 100;
         this.canvas = canvas;
         this.gl = undefined;
         this.program = undefined;
@@ -56,32 +71,10 @@ export default class GlslCanvas {
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
 
-        this.vertexString = options.vertexString || `
-#ifdef GL_ES
-precision mediump float;
-#endif
+        const defaultShaders = getDefaultShaderStrings(this.glslVersion);
 
-attribute vec2 a_position;
-attribute vec2 a_texcoord;
-
-varying vec2 v_texcoord;
-
-void main() {
-    gl_Position = vec4(a_position, 0.0, 1.0);
-    v_texcoord = a_texcoord;
-}
-`;
-        this.fragmentString = options.fragmentString || `
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-varying vec2 v_texcoord;
-
-void main(){
-    gl_FragColor = vec4(0.0);
-}
-`;
+        this.vertexString = options.vertexString || defaultShaders.vertexString;
+        this.fragmentString = options.fragmentString || defaultShaders.fragmentString;
 
         // GL Context
         let gl = setupWebGL(canvas, contextOptions, options);
@@ -625,11 +618,13 @@ void main(){
     }
 
     // create a buffers
-    createBuffer(W, H, program) {
+    createBuffer(W, H) {
         const gl = this.gl;
         let index = this.BUFFER_COUNT;
         this.BUFFER_COUNT += 2;
-        gl.getExtension('OES_texture_float');
+        if (this.webglVersion === 1) {
+            gl.getExtension('OES_texture_float');
+        }
         var texture = gl.createTexture();
         gl.activeTexture(gl.TEXTURE0 + index);
         gl.bindTexture(gl.TEXTURE_2D, texture);
