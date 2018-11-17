@@ -71,10 +71,10 @@ export default class GlslCanvas {
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
 
-        const defaultShaders = getDefaultShaderStrings(this.glslVersion);
+        this.defaultShaderStrings = getDefaultShaderStrings(this.glslVersion);
 
-        this.vertexString = options.vertexString || defaultShaders.vertexString;
-        this.fragmentString = options.fragmentString || defaultShaders.fragmentString;
+        this.vertexString = options.vertexString || this.defaultShaderStrings.vertexString;
+        this.fragmentString = options.fragmentString || this.defaultShaderStrings.fragmentString;
 
         // GL Context
         let gl = setupWebGL(canvas, contextOptions, options);
@@ -238,7 +238,7 @@ export default class GlslCanvas {
 
         // If Fragment shader fails load a empty one to sign the error
         if (!fragmentShader) {
-            fragmentShader = createShader(this, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', this.gl.FRAGMENT_SHADER);
+            fragmentShader = createShader(this, this.defaultShaderStrings.fragmentString, this.gl.FRAGMENT_SHADER);
             this.isValid = false;
         }
         else {
@@ -571,7 +571,7 @@ export default class GlslCanvas {
             const buffer = buffers[key];
             let fragment = createShader(glsl, buffer.fragment, gl.FRAGMENT_SHADER, 1);
             if (!fragment) {
-                fragment = createShader(glsl, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', gl.FRAGMENT_SHADER);
+                fragment = createShader(glsl, this.defaultShaderStrings.fragmentString, gl.FRAGMENT_SHADER);
                 glsl.isValid = false;
             } else {
                 glsl.isValid = true;
