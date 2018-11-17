@@ -1644,15 +1644,16 @@ var GlslCanvas = function () {
     }, {
         key: 'test',
         value: function test(callback, fragString, vertString) {
+            var _this2 = this;
+
             // Thanks to @thespite for the help here
             // https://www.khronos.org/registry/webgl/extensions/EXT_disjoint_timer_query/
             var pre_test_vert = this.vertexString;
             var pre_test_frag = this.fragmentString;
             var pre_test_paused = this.paused;
-
-            var ext = this.gl.getExtension('EXT_disjoint_timer_query');
-            var query = ext.createQueryEXT();
             var wasValid = this.isValid;
+            var ext = this.webglVersion === 2 ? this.gl.getExtension('EXT_disjoint_timer_query_webgl2') : this.gl.getExtension('EXT_disjoint_timer_query');
+            var query = this.webglVersion === 2 ? this.gl.createQuery() : ext.createQueryEXT();
 
             if (fragString || vertString) {
                 this.load(fragString, vertString);
@@ -1662,43 +1663,42 @@ var GlslCanvas = function () {
             }
 
             this.paused = true;
-            ext.beginQueryEXT(ext.TIME_ELAPSED_EXT, query);
+            this.webglVersion === 2 ? this.gl.beginQuery(ext.TIME_ELAPSED_EXT, query) : ext.beginQueryEXT(ext.TIME_ELAPSED_EXT, query);
             this.forceRender = true;
             this.render();
-            ext.endQueryEXT(ext.TIME_ELAPSED_EXT);
+            this.webglVersion === 2 ? this.gl.endQuery(ext.TIME_ELAPSED_EXT) : ext.endQueryEXT(ext.TIME_ELAPSED_EXT);
 
-            var sandbox = this;
-            function finishTest() {
+            var finishTest = function finishTest() {
                 // Revert changes... go back to normal
-                sandbox.paused = pre_test_paused;
+                _this2.paused = pre_test_paused;
                 if (fragString || vertString) {
-                    sandbox.load(pre_test_frag, pre_test_vert);
+                    _this2.load(pre_test_frag, pre_test_vert);
                 }
-            }
-            function waitForTest() {
-                sandbox.forceRender = true;
-                sandbox.render();
-                var available = ext.getQueryObjectEXT(query, ext.QUERY_RESULT_AVAILABLE_EXT);
-                var disjoint = sandbox.gl.getParameter(ext.GPU_DISJOINT_EXT);
+            };
+            var waitForTest = function waitForTest() {
+                _this2.forceRender = true;
+                _this2.render();
+                var available = _this2.webglVersion === 2 ? _this2.gl.getQueryParameter(query, _this2.gl.QUERY_RESULT_AVAILABLE) : ext.getQueryObjectEXT(query, ext.QUERY_RESULT_AVAILABLE_EXT);
+                var disjoint = _this2.gl.getParameter(ext.GPU_DISJOINT_EXT);
                 if (available && !disjoint) {
                     var ret = {
                         wasValid: wasValid,
-                        frag: fragString || sandbox.fragmentString,
-                        vert: vertString || sandbox.vertexString,
-                        timeElapsedMs: ext.getQueryObjectEXT(query, ext.QUERY_RESULT_EXT) / 1000000.0
+                        frag: fragString || _this2.fragmentString,
+                        vert: vertString || _this2.vertexString,
+                        timeElapsedMs: _this2.webglVersion === 2 ? _this2.gl.getQueryParameter(query, _this2.gl.QUERY_RESULT) / 1000000.0 : ext.getQueryObjectEXT(query, ext.QUERY_RESULT_EXT) / 1000000.0
                     };
                     finishTest();
                     callback(ret);
                 } else {
                     window.requestAnimationFrame(waitForTest);
                 }
-            }
+            };
             waitForTest();
         }
     }, {
         key: 'loadTexture',
         value: function loadTexture(name, urlElementOrData, options) {
-            var _this2 = this;
+            var _this3 = this;
 
             if (!options) {
                 options = {};
@@ -1718,13 +1718,13 @@ var GlslCanvas = function () {
                 if (this.textures[name]) {
                     this.textures[name].load(options);
                     this.textures[name].on('loaded', function (args) {
-                        _this2.forceRender = true;
+                        _this3.forceRender = true;
                     });
                 }
             } else {
                 this.textures[name] = new Texture(this.gl, name, options);
                 this.textures[name].on('loaded', function (args) {
-                    _this2.forceRender = true;
+                    _this3.forceRender = true;
                 });
             }
         }
