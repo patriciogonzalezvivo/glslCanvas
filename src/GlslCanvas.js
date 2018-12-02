@@ -45,6 +45,7 @@ export default class GlslCanvas {
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
+        this.paused = false;
 
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
@@ -168,7 +169,8 @@ void main(){
 
         // Start
         this.setMouse({ x: 0, y: 0 });
-        RenderLoop();
+        if (!this.paused)
+            RenderLoop();
         return this;
     }
 
