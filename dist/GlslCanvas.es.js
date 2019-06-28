@@ -305,7 +305,7 @@ function create3DContext(canvas, optAttribs) {
  */
 function createShader(main, source, type, offset) {
     var gl = main.gl;
-
+    
     var shader = gl.createShader(type);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);

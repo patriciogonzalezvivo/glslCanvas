@@ -7,9 +7,6 @@
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
 
-
-
-
 function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
@@ -705,6 +702,27 @@ function create3DContext(canvas, optAttribs) {
     return context;
 }
 
+
+        //      this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
+        //      var nTextures = this.fragmentString.search(/sampler2D/g);
+        //      var match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
+        //      var main = lines[i].match(/\s*void\s*main\s*/g);
+
+function stripIncludes( source )
+{
+    let exp = /#include\s([\w].*)/ig;
+    console.log('strip source',source);
+    let file = source.match(/(?=#include).*/ig);
+    // file = file[0].match(/([\s]*.\s)/ig);
+    // /?<=WORD)(?s)(.*$)
+    // /(\?<=#include)\s.*/ig   // NOPE
+    // (?<=WORD).*$
+    // (?<=sentence).*
+    console.log("file:",file);
+    source = source.replace(exp,"");
+    console.log('output',source);
+    return source;
+}
 /*
  *	Create a Vertex of a specific type (gl.VERTEX_SHADER/)
  */
@@ -1446,6 +1464,9 @@ var GlslCanvas = function () {
                 _this.load(_this.fragmentString, body);
             });
         }
+
+        // Need to strip unifoms here
+        this.fragmentString = stripIncludes( this.fragmentString );
 
         this.load();
 
