@@ -711,16 +711,17 @@ function create3DContext(canvas, optAttribs) {
 function stripIncludes( source )
 {
     let exp = /#include\s([\w].*)/ig;
-    console.log('strip source',source);
     let file = source.match(/(?=#include).*/ig);
-    // file = file[0].match(/([\s]*.\s)/ig);
-    // /?<=WORD)(?s)(.*$)
-    // /(\?<=#include)\s.*/ig   // NOPE
-    // (?<=WORD).*$
-    // (?<=sentence).*
-    console.log("file:",file);
+
+    var m;
+    do {
+        m = exp.exec(source);
+        if (m) {
+            console.log(m[1], m[2]);
+        }
+    } while (m);
+
     source = source.replace(exp,"");
-    console.log('output',source);
     return source;
 }
 /*
