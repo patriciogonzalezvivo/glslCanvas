@@ -7,6 +7,9 @@
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
 
+
+
+
 function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
@@ -702,28 +705,6 @@ function create3DContext(canvas, optAttribs) {
     return context;
 }
 
-
-        //      this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
-        //      var nTextures = this.fragmentString.search(/sampler2D/g);
-        //      var match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
-        //      var main = lines[i].match(/\s*void\s*main\s*/g);
-
-function stripIncludes( source )
-{
-    let exp = /#include\s([\w].*)/ig;
-    let file = source.match(/(?=#include).*/ig);
-
-    var m;
-    do {
-        m = exp.exec(source);
-        if (m) {
-            console.log(m[1], m[2]);
-        }
-    } while (m);
-
-    source = source.replace(exp,"");
-    return source;
-}
 /*
  *	Create a Vertex of a specific type (gl.VERTEX_SHADER/)
  */
@@ -1069,8 +1050,6 @@ function subscribeMixin$1(target) {
 }
 
 // Texture management
-// GL texture wrapper object for keeping track of a global set of textures, keyed by a unique user-defined name
-
 var Texture = function () {
     function Texture(gl, name) {
         var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -1365,12 +1344,101 @@ var Texture = function () {
     return Texture;
 }();
 
+// Report max texture size for a GL context
+
+
 Texture.getMaxTextureSize = function (gl) {
     return gl.getParameter(gl.MAX_TEXTURE_SIZE);
 };
 
 // Global set of textures, by name
 Texture.activeUnit = -1;
+
+var Includes = function () {
+    function Includes() {
+        classCallCheck(this, Includes);
+
+        this.files = {};
+    }
+
+    createClass(Includes, [{
+        key: 'stripIncludes',
+        value: function stripIncludes(source) {
+            var exp = /#include\s([\w].*)/ig;
+            var file = source.match(/(?=#include).*/ig);
+
+            var m;
+            do {
+                m = exp.exec(source);
+                if (m) {
+                    if (this.isFileNew(m[1]) == false) {
+                        this.files[m[1]] = 'data';
+                        this.loadFile(m[1]);
+                    }
+
+                    console.log(this.files);
+                }
+            } while (m);
+
+            source = source.replace(exp, "");
+            return source;
+        }
+    }, {
+        key: 'loadFile',
+        value: function loadFile(src) {
+            var p = new Promise(function (resolve, reject) {
+                var element = document.createElement('script');
+                element.async = true;
+                element.type = "text/javascript";
+
+                var parent = 'body';
+                var attr = 'src';
+
+                // Important success and error for the promise
+                element.onload = function () {
+                    console.log('loaded:', src);resolve(src);
+                };
+                element.onerror = function () {
+                    return reject(src);
+                };
+                element[attr] = src;
+                document[parent].appendChild(element);
+            });
+        }
+    }, {
+        key: 'isFileNew',
+        value: function isFileNew(src) {
+            var keys = Object.keys(this.files);
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+                for (var _iterator = keys[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var key = _step.value;
+
+                    if (key === src) return true;
+                }
+            } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
+                    }
+                } finally {
+                    if (_didIteratorError) {
+                        throw _iteratorError;
+                    }
+                }
+            }
+
+            return false;
+        }
+    }]);
+    return Includes;
+}();
 
 /*
 The MIT License (MIT)
@@ -1424,6 +1492,7 @@ var GlslCanvas = function () {
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
+        this.includes = new Includes();
 
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
@@ -1466,8 +1535,7 @@ var GlslCanvas = function () {
             });
         }
 
-        // Need to strip unifoms here
-        this.fragmentString = stripIncludes( this.fragmentString );
+        this.fragmentString = this.includes.stripIncludes(this.fragmentString);
 
         this.load();
 

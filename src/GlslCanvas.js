@@ -26,6 +26,7 @@ import { createProgram, createShader, parseUniforms, setupWebGL } from './gl/gl'
 import Texture from './gl/Texture';
 import { isCanvasVisible, isDiff } from './tools/common';
 import { subscribeMixin } from './tools/mixin';
+import Includes from './gl/Includes';
 
 export default class GlslCanvas {
     constructor(canvas, contextOptions, options) {
@@ -55,6 +56,7 @@ export default class GlslCanvas {
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
+        this.includes = new Includes();
 
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
@@ -122,6 +124,8 @@ void main(){
                 this.load(this.fragmentString, body);
             });
         }
+
+        this.fragmentString = this.includes.stripIncludes( this.fragmentString );
 
         this.load();
 
