@@ -1,8 +1,8 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.GlslCanvas = factory());
-}(this, (function () { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('constants')) :
+	typeof define === 'function' && define.amd ? define(['constants'], factory) :
+	(global.GlslCanvas = factory(global.constants));
+}(this, (function (constants) { 'use strict';
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -1364,6 +1364,8 @@ var Includes = function () {
     createClass(Includes, [{
         key: 'stripIncludes',
         value: function stripIncludes(source) {
+            var _this = this;
+
             var exp = /#include\s([\w].*)/ig;
             var file = source.match(/(?=#include).*/ig);
 
@@ -1372,11 +1374,18 @@ var Includes = function () {
                 m = exp.exec(source);
                 if (m) {
                     if (this.isFileNew(m[1]) == false) {
-                        this.files[m[1]] = 'data';
-                        this.loadFile(m[1]);
+                        (function () {
+                            var src = m[1];
+                            _this.files[src] = '';
+                            _this.loadFile(src).then(function (data) {
+                                return _this.includeFile(src, data);
+                            }).catch(function (res) {
+                                return console.log('include error:', src, ' ', res);
+                            });
+                        })();
                     }
 
-                    console.log(this.files);
+                    // console.log(this.files);
                 }
             } while (m);
 
@@ -1384,25 +1393,36 @@ var Includes = function () {
             return source;
         }
     }, {
+        key: 'include',
+        value: function include(data) {} // going to over-ride this
+
+    }, {
+        key: 'includeFile',
+        value: function includeFile(src, data) {
+            // console.log('put include file in our shader.',src,data);
+            this.files[src] = data;
+            this.include(data);
+            // console.log(this.files);
+        }
+    }, {
         key: 'loadFile',
         value: function loadFile(src) {
-            var p = new Promise(function (resolve, reject) {
-                var element = document.createElement('script');
-                element.async = true;
-                element.type = "text/javascript";
+            return new Promise(function (resolve, reject) {
+                var client = new XMLHttpRequest();
+                client.open('GET', src, true);
+                client.overrideMimeType("text/plain");
+                client.setRequestHeader("Content-type", "text/html; charset=utf-8");
+                client.onreadystatechange = function () {
 
-                var parent = 'body';
-                var attr = 'src';
-
-                // Important success and error for the promise
-                element.onload = function () {
-                    console.log('loaded:', src);resolve(src);
+                    if (client.readyState == 4) {
+                        if (client.status == 200 || client.responseText != '') // || client.status == 0
+                            resolve(client.responseText);else reject(client.type);
+                    }
                 };
-                element.onerror = function () {
-                    return reject(src);
+                client.onerror = function (ex) {
+                    return reject(ex);
                 };
-                element[attr] = src;
-                document[parent].appendChild(element);
+                client.send();
             });
         }
     }, {
@@ -1535,9 +1555,20 @@ var GlslCanvas = function () {
             });
         }
 
+        // test injection for data includes
         this.fragmentString = this.includes.stripIncludes(this.fragmentString);
+        this.includes.include = function (data) {
+            // console.log('do it',data);
+            var source = _this.fragmentString;
+            var def = /\#ifdef(\s\S*)+\#endif/img;
+            var header = source.match(def);
+            source = source.replace(def, header + '\n\n' + data);
+            _this.fragmentString = source;
+            console.log(_this.fragmentString);
+            _this.load(_this.fragmentString, _this.vertexString);
+        };
 
-        this.load();
+        // this.load();
 
         if (!this.program) {
             return;

@@ -5,7 +5,7 @@
         <title>GlslCanvas</title>
 
         <script type="text/javascript" src="dist/GlslCanvas.js"></script>
-        <script type="text/javascript" src="https://cdn.rawgit.com/github/fetch/master/fetch.js"></script>
+        <!-- <script type="text/javascript" src="https://cdn.rawgit.com/github/fetch/master/fetch.js"></script> -->
 
         <style>
             body {
@@ -148,7 +148,7 @@ void main(){
     //color += texture2D(u_logo, st).rgb * step(.0001,st.y) * step(st.y,.999);
 
     // testing include
-    //color = vec3(1.0) * random(st);
+    color = vec3(1.0) * random(st);
 
     gl_FragColor = vec4(color, 1.0);
 }

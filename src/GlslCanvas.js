@@ -125,9 +125,21 @@ void main(){
             });
         }
 
+        // test injection for data includes
         this.fragmentString = this.includes.stripIncludes( this.fragmentString );
+        this.includes.include = (data) =>
+        {
+            // console.log('do it',data);
+            let source = this.fragmentString;
+            let  def = /\#ifdef(\s\S*)+\#endif/img;
+            let header = source.match(def);
+            source = source.replace(def,header+'\n\n'+data);
+            this.fragmentString = source;
+            console.log(this.fragmentString);
+            this.load(this.fragmentString,this.vertexString);
+        }
 
-        this.load();
+        // this.load();
 
         if (!this.program) {
             return;

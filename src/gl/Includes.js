@@ -1,3 +1,5 @@
+import { S_IFREG } from "constants";
+
 export default class Includes {
     constructor()
     {
@@ -15,11 +17,12 @@ export default class Includes {
             if (m) {
                 if(this.isFileNew(m[1]) == false)
                 {
-                    this.files[m[1]] = 'data';
-                    this.loadFile(m[1]);
+                    let src = m[1];
+                    this.files[src] = '';
+                    this.loadFile(src).then( (data) => this.includeFile(src,data)  ).catch((res) => console.log('include error:',src,' ',res));
                 }
 
-                console.log(this.files);
+                // console.log(this.files);
             }
         } while (m);
     
@@ -27,24 +30,37 @@ export default class Includes {
         return source;
     }
     
-    loadFile(src)
-    {
-        let p = new Promise(function(resolve, reject) {
-            var element = document.createElement('script');
-                element.async = true;   
-                element.type = "text/javascript";
+    include(data){}     // going to over-ride this
 
-            var parent = 'body';
-            var attr = 'src';
-    
-            // Important success and error for the promise
-            element.onload = () => { console.log('loaded:',src); resolve(src) };
-            element.onerror = () => reject(src);
-            element[attr] = src;
-            document[parent].appendChild(element);            
-        });
+    includeFile(src,data)
+    {
+        // console.log('put include file in our shader.',src,data);
+        this.files[src] = data;
+        this.include(data);
+        // console.log(this.files);
     }
 
+    loadFile(src)
+    {
+        return new Promise( (resolve,reject) => {
+            var client = new XMLHttpRequest();
+            client.open('GET', src, true);
+            client.overrideMimeType("text/plain");
+            client.setRequestHeader("Content-type","text/html; charset=utf-8");
+            client.onreadystatechange = () => {
+    
+                if (client.readyState == 4)
+                {
+                    if(client.status == 200 || client.responseText != '')        // || client.status == 0
+                        resolve( client.responseText );
+                    else
+                        reject( client.type );
+                }
+            }
+            client.onerror = (ex) => reject(ex);
+            client.send();
+        });
+    }
 
     isFileNew(src)
     {
