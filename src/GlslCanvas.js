@@ -229,6 +229,8 @@ void main(){
             this.fragmentString = fragString;
         }
 
+        // Should probably just strip my include and deal with shit here
+        
         this.animated = false;
         this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
         this.nTime = (this.fragmentString.match(/u_time/g) || []).length;
