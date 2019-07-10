@@ -64,7 +64,6 @@ precision mediump float;
 #endif
 
 #include data/random.glsl
-#include momdata/random.glsl
 
 #define PI 3.1415926535
 #define HALF_PI 1.57079632679
@@ -145,8 +144,9 @@ void main(){
     color *= smoothstep(0.001, 0.02, radius);
 
     st = scale(st, 2.);
-    //color += texture2D(u_logo, st).rgb * step(.0001,st.y) * step(st.y,.999);
+    color += texture2D(u_logo, st).rgb * step(.0001,st.y) * step(st.y,.999);
 
+    color = vec3(1.0);
     // testing include
     color = vec3(1.0) * random(st);
 

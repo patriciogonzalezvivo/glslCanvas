@@ -32,6 +32,14 @@ export default class Includes {
     
     include(data){}     // going to over-ride this
 
+    addInclude(src,includeSrc)
+    {
+        let  def = /\#ifdef(\s\S*)+\#endif/img;
+        let header = src.match(def);
+        src = src.replace(def,header+'\n\n'+includeSrc);
+        return src;
+    }
+
     includeFile(src,data)
     {
         // console.log('put include file in our shader.',src,data);

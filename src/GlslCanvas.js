@@ -105,12 +105,19 @@ void main(){
 
         // Load shader
         if (canvas.hasAttribute('data-fragment')) {
-            this.fragmentString = canvas.getAttribute('data-fragment');
+            this.tempFragmentString = canvas.getAttribute('data-fragment');
+            this.tempFragmentString = this.includes.stripIncludes(this.tempFragmentString);
         }
         else if (canvas.hasAttribute('data-fragment-url')) {
             let source = canvas.getAttribute('data-fragment-url');
             xhr.get(source, (error, response, body) => {
-                this.load(body, this.vertexString);
+                body = this.includes.stripIncludes( body );
+                this.includes.include = (include) =>
+                {
+                    console.log('body',body);
+                    body = this.includes.addInclude(body,include);
+                    this.load(body, this.vertexString);
+                }
             });
         }
 
@@ -125,21 +132,14 @@ void main(){
             });
         }
 
-        // test injection for data includes
-        this.fragmentString = this.includes.stripIncludes( this.fragmentString );
-        this.includes.include = (data) =>
-        {
-            // console.log('do it',data);
-            let source = this.fragmentString;
-            let  def = /\#ifdef(\s\S*)+\#endif/img;
-            let header = source.match(def);
-            source = source.replace(def,header+'\n\n'+data);
-            this.fragmentString = source;
-            console.log(this.fragmentString);
-            this.load(this.fragmentString,this.vertexString);
-        }
+       // Stripe for Include
+       this.includes.include = (include) =>
+       {
+            this.fragmentString = this.includes.addInclude(this.tempFragmentString,include);
+            this.load();
+       }
 
-        // this.load();
+        this.load();
 
         if (!this.program) {
             return;

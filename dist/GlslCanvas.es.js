@@ -993,6 +993,14 @@ var Includes = function () {
         value: function include(data) {} // going to over-ride this
 
     }, {
+        key: 'addInclude',
+        value: function addInclude(src, includeSrc) {
+            var def = /\#ifdef(\s\S*)+\#endif/img;
+            var header = src.match(def);
+            src = src.replace(def, header + '\n\n' + includeSrc);
+            return src;
+        }
+    }, {
         key: 'includeFile',
         value: function includeFile(src, data) {
             // console.log('put include file in our shader.',src,data);
@@ -1133,11 +1141,17 @@ var GlslCanvas = function () {
 
         // Load shader
         if (canvas.hasAttribute('data-fragment')) {
-            this.fragmentString = canvas.getAttribute('data-fragment');
+            this.tempFragmentString = canvas.getAttribute('data-fragment');
+            this.tempFragmentString = this.includes.stripIncludes(this.tempFragmentString);
         } else if (canvas.hasAttribute('data-fragment-url')) {
             var source = canvas.getAttribute('data-fragment-url');
             xhr.get(source, function (error, response, body) {
-                _this.load(body, _this.vertexString);
+                body = _this.includes.stripIncludes(body);
+                _this.includes.include = function (include) {
+                    console.log('body', body);
+                    body = _this.includes.addInclude(body, include);
+                    _this.load(body, _this.vertexString);
+                };
             });
         }
 
@@ -1151,20 +1165,13 @@ var GlslCanvas = function () {
             });
         }
 
-        // test injection for data includes
-        this.fragmentString = this.includes.stripIncludes(this.fragmentString);
-        this.includes.include = function (data) {
-            // console.log('do it',data);
-            var source = _this.fragmentString;
-            var def = /\#ifdef(\s\S*)+\#endif/img;
-            var header = source.match(def);
-            source = source.replace(def, header + '\n\n' + data);
-            _this.fragmentString = source;
-            console.log(_this.fragmentString);
-            _this.load(_this.fragmentString, _this.vertexString);
+        // Stripe for Include
+        this.includes.include = function (include) {
+            _this.fragmentString = _this.includes.addInclude(_this.tempFragmentString, include);
+            _this.load();
         };
 
-        // this.load();
+        this.load();
 
         if (!this.program) {
             return;
