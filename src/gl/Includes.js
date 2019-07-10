@@ -4,10 +4,14 @@ export default class Includes {
     constructor()
     {
         this.files = {};
+        this.file = '';
     }
 
     stripIncludes( source )
     {
+        // define our file to strip here
+        this.file = source;
+
         let exp = /#include\s([\w].*)/ig;
         let file = source.match(/(?=#include).*/ig);
     
@@ -19,7 +23,7 @@ export default class Includes {
                 {
                     let src = m[1];
                     this.files[src] = '';
-                    this.loadFile(src).then( (data) => this.includeFile(src,data)  ).catch((res) => console.log('include error:',src,' ',res));
+                    this.loadIncludeFile(src).then( (data) => this.includeFileLoaded(src,data)  ).catch((res) => console.log('include error:',src,' ',res));
                 }
 
                 // console.log(this.files);
@@ -27,12 +31,14 @@ export default class Includes {
         } while (m);
     
         source = source.replace(exp,"");
+
+        this.file = source;
         return source;
     }
     
-    include(data){}     // going to over-ride this
+    fileIncluded(file){}     // going to over-ride this
 
-    addInclude(src,includeSrc)
+    injectIncludeFile(src,includeSrc)
     {
         let  def = /\#ifdef(\s\S*)+\#endif/img;
         let header = src.match(def);
@@ -40,15 +46,17 @@ export default class Includes {
         return src;
     }
 
-    includeFile(src,data)
+    includeFileLoaded(src,include)
     {
         // console.log('put include file in our shader.',src,data);
-        this.files[src] = data;
-        this.include(data);
+        this.files[src] = include;
+        console.log(include);
+        this.file = this.injectIncludeFile(this.file,include);
+        this.fileIncluded(this.file);
         // console.log(this.files);
     }
 
-    loadFile(src)
+    loadIncludeFile(src)
     {
         return new Promise( (resolve,reject) => {
             var client = new XMLHttpRequest();
