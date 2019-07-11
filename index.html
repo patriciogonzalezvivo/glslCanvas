@@ -5,8 +5,8 @@
         <title>GlslCanvas</title>
 
         <script type="text/javascript" src="dist/GlslCanvas.js"></script>
-        <script type="text/javascript" src="https://cdn.rawgit.com/github/fetch/master/fetch.js"></script>
-
+        <!-- <script type="text/javascript" src="https://cdn.rawgit.com/github/fetch/master/fetch.js"></script> -->
+        <script type="shader" src="data/test.frag"></script>
         <style>
             body {
                 background: #101515;
@@ -56,11 +56,14 @@
 
     </head>
     <body>
+            <!-- //#include "data/random.glsl" -->
         <canvas id="glslCanvas" data-fragment="
 // Author: Patricio Gonzalez Vivo
 #ifdef GL_ES
 precision mediump float;
 #endif
+
+#include data/random.glsl
 
 #define PI 3.1415926535
 #define HALF_PI 1.57079632679
@@ -142,6 +145,9 @@ void main(){
 
     st = scale(st, 2.);
     color += texture2D(u_logo, st).rgb * step(.0001,st.y) * step(st.y,.999);
+
+    // add random pixel noise via include file
+    color += vec3(0.1) * random(st);
 
     gl_FragColor = vec4(color, 1.0);
 }
@@ -265,6 +271,9 @@ void main(){
                 }
             }
         }
+
+        // testing load/promise cancel after initial data in attribute
+        // load("data/test.frag");
     </script>
     <script>
         (function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){

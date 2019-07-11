@@ -89,6 +89,19 @@ sandbox.setUniform("u_color",1,0,0);
 // Load a new texture and assign it to "uniform sampler2D u_texture"
 sandbox.setUniform("u_texture","data/texture.jpg");
 ```
+### Include Files
+
+Basic include support is offered for **fragment shaders only** in the style of [glslViewer](https://github.com/patriciogonzalezvivo/glslViewer). Includes must come after your ```#ifdef GL_ES...#endif``` definition. In order to utilize this support you can define imports in your fragment shader as follows:
+
+```
+#ifdef GL_ES
+    precision mediump float;
+#endif
+
+#include data/random.glsl
+#include data/additional.glsl
+
+```
 
 ### Quick start demo
 
