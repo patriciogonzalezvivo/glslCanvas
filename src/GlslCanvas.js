@@ -60,33 +60,34 @@ export default class GlslCanvas {
 
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
-
-        this.vertexString = contextOptions.vertexString || `
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-attribute vec2 a_position;
-attribute vec2 a_texcoord;
-
-varying vec2 v_texcoord;
-
-void main() {
-    gl_Position = vec4(a_position, 0.0, 1.0);
-    v_texcoord = a_texcoord;
-}
-`;
-        this.fragmentString = contextOptions.fragmentString || `
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-varying vec2 v_texcoord;
-
-void main(){
-    gl_FragColor = vec4(0.0);
-}
-`;
+        this.defaultVertexString = `
+        #ifdef GL_ES
+        precision mediump float;
+        #endif
+        
+        attribute vec2 a_position;
+        attribute vec2 a_texcoord;
+        
+        varying vec2 v_texcoord;
+        
+        void main() {
+            gl_Position = vec4(a_position, 0.0, 1.0);
+            v_texcoord = a_texcoord;
+        }
+        `;
+        this.defaultFragmentString = `
+        #ifdef GL_ES
+        precision mediump float;
+        #endif
+        
+        varying vec2 v_texcoord;
+        
+        void main(){
+            gl_FragColor = vec4(0.0);
+        }
+        `;
+        this.vertexString = contextOptions.vertexString || this.defaultVertexString;
+        this.fragmentString = contextOptions.fragmentString || this.defaultFragmentString;
 
         // GL Context
         let gl = setupWebGL(canvas, contextOptions, options.onError);
@@ -98,6 +99,7 @@ void main(){
         this.timeDelta = 0.0;
         this.forceRender = true;
         this.paused = false;
+        this.deferLoadForIncludes = false;
         this.realToCSSPixels = window.devicePixelRatio || 1;
 
         // Allow alpha
@@ -105,29 +107,20 @@ void main(){
 
         // Load shader
         if (canvas.hasAttribute('data-fragment')) {
-            this.includes.stripIncludes(canvas.getAttribute('data-fragment'));
-            this.includes.fileIncluded = (file) =>
-            {
-                 this.fragmentString = file;
-                 this.load();
-            }            
+            this.fragmentString = canvas.getAttribute('data-fragment');
+            this.load();
         }
         else if (canvas.hasAttribute('data-fragment-url')) {
             let source = canvas.getAttribute('data-fragment-url');
             xhr.get(source, (error, response, body) => {
-                
-                this.includes.stripIncludes(body);
-                this.includes.fileIncluded = (file) =>
-                {
-                     this.fragmentString = file;
-                     this.load();
-                }  
+                this.load(body, this.vertexString);
             });
         }
 
         // Load shader
         if (canvas.hasAttribute('data-vertex')) {
             this.vertexString = canvas.getAttribute('data-vertex');
+            this.load();
         }
         else if (canvas.hasAttribute('data-vertex-url')) {
             let source = canvas.getAttribute('data-vertex-url');
@@ -136,7 +129,8 @@ void main(){
             });
         }
 
-        this.load();
+        // need to load our default shaders to progress through process
+        this.load_after_includes(this.defaultFragmentString ,this.defaultVertexString );     
 
         if (!this.program) {
             return;
@@ -217,8 +211,8 @@ void main(){
         this.gl = null;
     }
 
-    load (fragString, vertString) {
-
+    load (fragString, vertString)
+    {
         // Load vertex shader if there is one
         if (vertString) {
             this.vertexString = vertString;
@@ -229,18 +223,28 @@ void main(){
             this.fragmentString = fragString;
         }
 
+        this.includes.stripIncludes(this.fragmentString);
+        this.includes.fileIncluded = (file) =>
+        {
+             this.fragmentString = file;
+             console.log(file);
+             this.load_after_includes(this.fragmentString,this.vertexString);
+        }    
+    }
+
+    load_after_includes (fragString, vertString) {
         // Should probably just strip my include and deal with shit here
         
         this.animated = false;
-        this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
-        this.nTime = (this.fragmentString.match(/u_time/g) || []).length;
-        this.nDate = (this.fragmentString.match(/u_date/g) || []).length;
-        this.nMouse = (this.fragmentString.match(/u_mouse/g) || []).length;
+        this.nDelta = (fragString.match(/u_delta/g) || []).length;
+        this.nTime = (fragString.match(/u_time/g) || []).length;
+        this.nDate = (fragString.match(/u_date/g) || []).length;
+        this.nMouse = (fragString.match(/u_mouse/g) || []).length;
         this.animated = this.nDate > 1 || this.nTime > 1 || this.nMouse > 1;
 
-        let nTextures = this.fragmentString.search(/sampler2D/g);
+        let nTextures = fragString.search(/sampler2D/g);
         if (nTextures) {
-            let lines = this.fragmentString.split('\n');
+            let lines = fragString.split('\n');
             for (let i = 0; i < lines.length; i++) {
                 let match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
                 if (match) {
@@ -258,8 +262,8 @@ void main(){
             }
         }
 
-        let vertexShader = createShader(this, this.vertexString, this.gl.VERTEX_SHADER);
-        let fragmentShader = createShader(this, this.fragmentString, this.gl.FRAGMENT_SHADER);
+        let vertexShader = createShader(this, vertString, this.gl.VERTEX_SHADER);
+        let fragmentShader = createShader(this, fragString, this.gl.FRAGMENT_SHADER);
 
         // If Fragment shader fails load a empty one to sign the error
         if (!fragmentShader) {
@@ -284,7 +288,7 @@ void main(){
         this.change = true;
 
         this.BUFFER_COUNT = 0;
-        const buffers = this.getBuffers(this.fragmentString);
+        const buffers = this.getBuffers(fragString);
         if (Object.keys(buffers).length) {
             this.loadPrograms(buffers);
         }

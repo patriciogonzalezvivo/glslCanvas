@@ -7,8 +7,26 @@ export default class Includes {
         this.file = '';
     }
 
+    cancelPromiseCallbacks()
+    {        
+        let c = Object.keys(this.files).length;
+
+        if(c <= 0)
+            return;
+
+        const values = Object.values(this.files)
+        for (const value of values) {
+            value.parse = false;
+        }
+
+        this.files = {};
+    }
+
     stripIncludes( source )
     {
+        // cancel any current promises
+        this.cancelPromiseCallbacks();
+
         // define our file to strip here
         this.file = source;
 
@@ -22,11 +40,16 @@ export default class Includes {
                 if(this.isFileNew(m[1]) == false)
                 {
                     let src = m[1];
-                    this.files[src] = '';
-                    this.loadIncludeFile(src).then( (data) => this.includeFileLoaded(src,data)  ).catch((res) => console.log('include error:',src,' ',res));
+                    let f = src;
+                    let p = this.loadIncludeFile(src).then( (data) => this.includeFileLoaded(src,data)  ).catch((res) => console.log('include error:',src,' ',res));
+                    let o = {
+                        'src':f,
+                        'promise':p,
+                        'include:':'',
+                        'parse':true
+                    };
+                    this.files[src] = o;
                 }
-
-                // console.log(this.files);
             }
         } while (m);
     
@@ -49,11 +72,16 @@ export default class Includes {
     includeFileLoaded(src,include)
     {
         // console.log('put include file in our shader.',src,data);
-        this.files[src] = include;
-        console.log(include);
+        let f = this.files[src];
+        this.files[src].include = include;
+        // console.log(include);
         this.file = this.injectIncludeFile(this.file,include);
+
+        if(f.parse == false)
+            return;
+
         this.fileIncluded(this.file);
-        // console.log(this.files);
+        this.files[src].parse = false;
     }
 
     loadIncludeFile(src)
@@ -78,6 +106,8 @@ export default class Includes {
         });
     }
 
+
+    // need to recreate this based on new structure
     isFileNew(src)
     {
         const keys = Object.keys(this.files)
