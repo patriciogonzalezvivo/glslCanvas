@@ -146,8 +146,8 @@ void main(){
     st = scale(st, 2.);
     color += texture2D(u_logo, st).rgb * step(.0001,st.y) * step(st.y,.999);
 
-    // testing include
-    //color = vec3(1.0) * random(st);
+    // add random pixel noise via include file
+    color += vec3(0.1) * random(st);
 
     gl_FragColor = vec4(color, 1.0);
 }
@@ -273,7 +273,7 @@ void main(){
         }
 
         // testing load/promise cancel after initial data in attribute
-        load("data/test.frag");
+        // load("data/test.frag");
     </script>
     <script>
         (function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){

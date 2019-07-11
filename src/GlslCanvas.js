@@ -228,7 +228,6 @@ export default class GlslCanvas {
         this.includes.fileIncluded = (file) =>
         {
              this.fragmentString = file;
-            //  console.log(file);
              this.load_after_includes(this.fragmentString,this.vertexString);
         }    
     }

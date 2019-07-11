@@ -646,6 +646,8 @@ function subscribeMixin$1(target) {
 }
 
 // Texture management
+// GL texture wrapper object for keeping track of a global set of textures, keyed by a unique user-defined name
+
 var Texture = function () {
     function Texture(gl, name) {
         var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -940,9 +942,6 @@ var Texture = function () {
     return Texture;
 }();
 
-// Report max texture size for a GL context
-
-
 Texture.getMaxTextureSize = function (gl) {
     return gl.getParameter(gl.MAX_TEXTURE_SIZE);
 };
@@ -960,7 +959,7 @@ var Includes = function () {
 
     createClass(Includes, [{
         key: 'fileIncluded',
-        value: function fileIncluded(file) {} // going to over-ride this
+        value: function fileIncluded(file) {} // going to over-ride this as callback in super class
 
     }, {
         key: 'cancelPromiseCallbacks',
@@ -1036,17 +1035,13 @@ var Includes = function () {
             } while (m);
 
             source = source.replace(exp, "");
-
             this.file = source;
 
-            console.log('hey');
             var promises = Object.values(this.files).map(function (i) {
                 return i.promise;
             });
             var t = this;
             Promise.all(promises).then(function (includes) {
-                // console.log(this.fileIncluded);
-                // t.fileIncluded(includes[includes.length-1]);
                 includes.forEach(function (include) {
                     t.includeFileLoaded(include.src, include.data);
                 });
@@ -1338,7 +1333,6 @@ var GlslCanvas = function () {
             this.includes.stripIncludes(this.fragmentString);
             this.includes.fileIncluded = function (file) {
                 _this2.fragmentString = file;
-                //  console.log(file);
                 _this2.load_after_includes(_this2.fragmentString, _this2.vertexString);
             };
         }

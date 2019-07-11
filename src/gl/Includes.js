@@ -7,7 +7,7 @@ export default class Includes {
         this.file = '';
     }
 
-    fileIncluded(file){}     // going to over-ride this
+    fileIncluded(file){}     // going to over-ride this as callback in super class
 
     cancelPromiseCallbacks()
     {        
@@ -55,15 +55,12 @@ export default class Includes {
         } while (m);
     
         source = source.replace(exp,"");
-
         this.file = source;
 
-        console.log('hey'); 
         let promises = Object.values(this.files).map( (i) => i.promise );
         let t = this;
-        Promise.all(promises).then(function(includes) {
-            // console.log(this.fileIncluded);
-            // t.fileIncluded(includes[includes.length-1]);
+        Promise.all(promises).then(function(includes)
+        {
             includes.forEach((include) =>
             {
                 t.includeFileLoaded(include.src,include.data);
