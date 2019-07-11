@@ -209,6 +209,7 @@ export default class GlslCanvas {
         }
         this.program = null;
         this.gl = null;
+        this.includes.cancelPromiseCallbacks();
     }
 
     load (fragString, vertString)
@@ -227,7 +228,7 @@ export default class GlslCanvas {
         this.includes.fileIncluded = (file) =>
         {
              this.fragmentString = file;
-             console.log(file);
+            //  console.log(file);
              this.load_after_includes(this.fragmentString,this.vertexString);
         }    
     }

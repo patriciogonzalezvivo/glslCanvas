@@ -1008,13 +1008,12 @@ var Includes = function () {
             // define our file to strip here
             this.file = source;
 
-            var exp = /#include\s([\w].*)/ig;
-            var file = source.match(/(?=#include).*/ig);
-
+            var exp = /^#include\s([\w].*)/igm; //previous /#include\s([\w].*)/ig;  // ^(?!\/\/).*
             var m;
             do {
                 m = exp.exec(source);
                 if (m) {
+                    console.log(m);
                     if (this.isFileNew(m[1]) == false) {
                         (function () {
                             var src = m[1];
@@ -1084,7 +1083,7 @@ var Includes = function () {
         value: function loadIncludeFile(src) {
             return new Promise(function (resolve, reject) {
                 var client = new XMLHttpRequest();
-                client.open('GET', src, true);
+                client.open('GET', src + "?" + Date.now(), true);
                 client.overrideMimeType("text/plain");
                 client.setRequestHeader("Content-type", "text/html; charset=utf-8");
                 client.onreadystatechange = function () {
@@ -1319,6 +1318,7 @@ var GlslCanvas = function () {
             }
             this.program = null;
             this.gl = null;
+            this.includes.cancelPromiseCallbacks();
         }
     }, {
         key: 'load',
@@ -1338,7 +1338,7 @@ var GlslCanvas = function () {
             this.includes.stripIncludes(this.fragmentString);
             this.includes.fileIncluded = function (file) {
                 _this2.fragmentString = file;
-                console.log(file);
+                //  console.log(file);
                 _this2.load_after_includes(_this2.fragmentString, _this2.vertexString);
             };
         }

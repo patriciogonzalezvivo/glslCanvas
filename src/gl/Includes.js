@@ -32,13 +32,12 @@ export default class Includes {
         // define our file to strip here
         this.file = source;
 
-        let exp = /#include\s([\w].*)/ig;
-        let file = source.match(/(?=#include).*/ig);
-    
+        let exp = /^#include\s([\w].*)/igm;     //previous /#include\s([\w].*)/ig;  // ^(?!\/\/).*
         var m;
         do {
             m = exp.exec(source);
             if (m) {
+                console.log(m);
                 if(this.isFileNew(m[1]) == false)
                 {
                     let src = m[1];
@@ -103,7 +102,7 @@ export default class Includes {
     {
         return new Promise( (resolve,reject) => {
             var client = new XMLHttpRequest();
-            client.open('GET', src, true);
+            client.open('GET', src+"?"+Date.now(), true);
             client.overrideMimeType("text/plain");
             client.setRequestHeader("Content-type","text/html; charset=utf-8");
             client.onreadystatechange = () => {
