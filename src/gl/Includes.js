@@ -7,6 +7,8 @@ export default class Includes {
         this.file = '';
     }
 
+    fileIncluded(file){}     // going to over-ride this
+
     cancelPromiseCallbacks()
     {        
         let c = Object.keys(this.files).length;
@@ -41,7 +43,7 @@ export default class Includes {
                 {
                     let src = m[1];
                     let f = src;
-                    let p = this.loadIncludeFile(src).then( (data) => this.includeFileLoaded(src,data)  ).catch((res) => console.log('include error:',src,' ',res));
+                    let p = this.loadIncludeFile(src).then( (data) => {return{'src':src,'data':data} }  ).catch((res) => console.log('include error:',src,' ',res));
                     let o = {
                         'src':f,
                         'promise':p,
@@ -56,11 +58,23 @@ export default class Includes {
         source = source.replace(exp,"");
 
         this.file = source;
+
+        console.log('hey'); 
+        let promises = Object.values(this.files).map( (i) => i.promise );
+        let t = this;
+        Promise.all(promises).then(function(includes) {
+            // console.log(this.fileIncluded);
+            // t.fileIncluded(includes[includes.length-1]);
+            includes.forEach((include) =>
+            {
+                t.includeFileLoaded(include.src,include.data);
+            });
+            t.fileIncluded(t.file);
+        });
+
         return source;
     }
     
-    fileIncluded(file){}     // going to over-ride this
-
     injectIncludeFile(src,includeSrc)
     {
         let  def = /\#ifdef(\s\S*)+\#endif/img;
@@ -71,17 +85,18 @@ export default class Includes {
 
     includeFileLoaded(src,include)
     {
-        // console.log('put include file in our shader.',src,data);
         let f = this.files[src];
-        this.files[src].include = include;
-        // console.log(include);
-        this.file = this.injectIncludeFile(this.file,include);
 
         if(f.parse == false)
-            return;
+            return false;
 
-        this.fileIncluded(this.file);
+        this.files[src].include = include;
         this.files[src].parse = false;
+
+        this.file = this.injectIncludeFile(this.file,include);
+
+        // this.fileIncluded(this.file);
+        return this.file;
     }
 
     loadIncludeFile(src)

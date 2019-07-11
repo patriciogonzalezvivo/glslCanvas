@@ -1363,6 +1363,10 @@ var Includes = function () {
     }
 
     createClass(Includes, [{
+        key: 'fileIncluded',
+        value: function fileIncluded(file) {} // going to over-ride this
+
+    }, {
         key: 'cancelPromiseCallbacks',
         value: function cancelPromiseCallbacks() {
             var c = Object.keys(this.files).length;
@@ -1420,7 +1424,7 @@ var Includes = function () {
                             var src = m[1];
                             var f = src;
                             var p = _this.loadIncludeFile(src).then(function (data) {
-                                return _this.includeFileLoaded(src, data);
+                                return { 'src': src, 'data': data };
                             }).catch(function (res) {
                                 return console.log('include error:', src, ' ', res);
                             });
@@ -1439,12 +1443,23 @@ var Includes = function () {
             source = source.replace(exp, "");
 
             this.file = source;
+
+            console.log('hey');
+            var promises = Object.values(this.files).map(function (i) {
+                return i.promise;
+            });
+            var t = this;
+            Promise.all(promises).then(function (includes) {
+                // console.log(this.fileIncluded);
+                // t.fileIncluded(includes[includes.length-1]);
+                includes.forEach(function (include) {
+                    t.includeFileLoaded(include.src, include.data);
+                });
+                t.fileIncluded(t.file);
+            });
+
             return source;
         }
-    }, {
-        key: 'fileIncluded',
-        value: function fileIncluded(file) {} // going to over-ride this
-
     }, {
         key: 'injectIncludeFile',
         value: function injectIncludeFile(src, includeSrc) {
@@ -1456,16 +1471,17 @@ var Includes = function () {
     }, {
         key: 'includeFileLoaded',
         value: function includeFileLoaded(src, include) {
-            // console.log('put include file in our shader.',src,data);
             var f = this.files[src];
+
+            if (f.parse == false) return false;
+
             this.files[src].include = include;
-            // console.log(include);
+            this.files[src].parse = false;
+
             this.file = this.injectIncludeFile(this.file, include);
 
-            if (f.parse == false) return;
-
-            this.fileIncluded(this.file);
-            this.files[src].parse = false;
+            // this.fileIncluded(this.file);
+            return this.file;
         }
     }, {
         key: 'loadIncludeFile',
