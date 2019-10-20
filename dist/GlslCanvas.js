@@ -1405,6 +1405,7 @@ var GlslCanvas = function () {
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
+        this.animationFrameRequest = undefined;
 
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
@@ -1497,7 +1498,7 @@ var GlslCanvas = function () {
             }
 
             sandbox.render();
-            window.requestAnimationFrame(RenderLoop);
+            sandbox.animationFrameRequest = window.requestAnimationFrame(RenderLoop);
         }
 
         // Start
@@ -1509,6 +1510,8 @@ var GlslCanvas = function () {
     createClass(GlslCanvas, [{
         key: 'destroy',
         value: function destroy() {
+            cancelAnimationFrame(this.animationFrameRequest);
+
             this.animated = false;
             this.isValid = false;
             for (var tex in this.textures) {
