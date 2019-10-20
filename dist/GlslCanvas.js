@@ -1510,6 +1510,7 @@ var GlslCanvas = function () {
     createClass(GlslCanvas, [{
         key: 'destroy',
         value: function destroy() {
+            // Stop the animation
             cancelAnimationFrame(this.animationFrameRequest);
 
             this.animated = false;
@@ -1529,6 +1530,13 @@ var GlslCanvas = function () {
                 var buffer = this.buffers[key];
                 this.gl.deleteProgram(buffer.program);
             }
+
+            // Try and clear the WebGL Context
+            var loseContext = this.gl.getExtension('WEBGL_lose_context');
+            if (loseContext) {
+                loseContext.loseContext();
+            }
+
             this.program = null;
             this.gl = null;
         }
