@@ -1531,12 +1531,6 @@ var GlslCanvas = function () {
                 this.gl.deleteProgram(buffer.program);
             }
 
-            // Try and clear the WebGL Context
-            var loseContext = this.gl.getExtension('WEBGL_lose_context');
-            if (loseContext) {
-                loseContext.loseContext();
-            }
-
             this.program = null;
             this.gl = null;
         }
