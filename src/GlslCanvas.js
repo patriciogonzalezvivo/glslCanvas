@@ -184,6 +184,7 @@ void main(){
     }
 
     destroy() {
+        // Stop the animation
         cancelAnimationFrame(this.animationFrameRequest);
 
         this.animated = false;
@@ -203,6 +204,13 @@ void main(){
             const buffer = this.buffers[key];
             this.gl.deleteProgram(buffer.program);
         }
+
+        // Try and clear the WebGL Context
+        let loseContext = this.gl.getExtension('WEBGL_lose_context');
+        if (loseContext) {
+            loseContext.loseContext();
+        }
+
         this.program = null;
         this.gl = null;
     }
