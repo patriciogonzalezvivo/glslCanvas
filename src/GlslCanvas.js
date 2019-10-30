@@ -55,6 +55,7 @@ export default class GlslCanvas {
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
+        this.animationFrameRequest = undefined;
 
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
@@ -171,9 +172,9 @@ void main(){
             if (sandbox.resize()) {
                 sandbox.forceRender = true;
             }
-            
+
             sandbox.render();
-            window.requestAnimationFrame(RenderLoop);
+            sandbox.animationFrameRequest = window.requestAnimationFrame(RenderLoop);
         }
 
         // Start
@@ -183,6 +184,9 @@ void main(){
     }
 
     destroy() {
+        // Stop the animation
+        cancelAnimationFrame(this.animationFrameRequest);
+
         this.animated = false;
         this.isValid = false;
         for (let tex in this.textures) {
@@ -200,6 +204,7 @@ void main(){
             const buffer = this.buffers[key];
             this.gl.deleteProgram(buffer.program);
         }
+
         this.program = null;
         this.gl = null;
     }
@@ -275,7 +280,7 @@ void main(){
         }
         this.buffers = buffers;
         this.texureIndex = this.BUFFER_COUNT;
-        
+
         // Trigger event
         this.trigger('load', {});
 
@@ -404,7 +409,7 @@ void main(){
             mouse.y && mouse.y >= rect.top && mouse.y <= rect.bottom) {
 
             let mouse_x = (mouse.x - rect.left ) * this.realToCSSPixels;
-            let mouse_y = (this.canvas.height - (mouse.y - rect.top) * this.realToCSSPixels);
+            let mouse_y = (this.height - (mouse.y - rect.top) * this.realToCSSPixels);
 
             this.uniform('2f', 'vec2', 'u_mouse', mouse_x, mouse_y);
         }
@@ -412,7 +417,7 @@ void main(){
 
     // ex: program.uniform('3f', 'position', x, y, z);
     uniform (method, type, name, ...value) { // 'value' is a method-appropriate arguments list
-        this.uniforms[name] = this.uniforms[name] || {}; 
+        this.uniforms[name] = this.uniforms[name] || {};
         let uniform = this.uniforms[name];
         let change = isDiff(uniform.value, value);
 
@@ -510,7 +515,7 @@ void main(){
             }
 
             // set the resolution uniform
-            this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width, this.canvas.height);
+            this.uniform('2f', 'vec2', 'u_resolution', this.canvas.width * this.realToCSSPixels, this.canvas.height * this.realToCSSPixels);
 
             for (let key in this.buffers) {
                 const buffer = this.buffers[key];
