@@ -1,6 +1,7 @@
 export function isCanvasVisible(canvas) {
-    return	((canvas.getBoundingClientRect().top + canvas.height) > 0) &&
-        (canvas.getBoundingClientRect().top < (window.innerHeight || document.documentElement.clientHeight));
+    let bound = canvas.getBoundingClientRect();
+    return	((bound.top + bound.height) > 0) &&
+        (bound.top < (window.innerHeight || document.documentElement.clientHeight));
 }
 
 export function isPowerOf2(value) {
