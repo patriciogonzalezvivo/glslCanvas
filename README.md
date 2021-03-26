@@ -37,7 +37,7 @@ As you can see, in this example we are loading the fragment shader by setting th
 * ```data-vertex-url``` : load a vertex shader by providing a valid url
 * ```data-textures```: add a list of texture urls separated by commas (ex: ```data-textures="texture.jpg,normal_map.png,something.jpg"```). Textures will be assigned in order to ```uniform sampler2D``` variables with names following this style: ```u_tex0```, ```u_tex1```, ```u_tex2```, etc.
 
-All the catched ```.glslCanvas``` element whill be stored in the ```windows.glslCanvases``` array.
+All the cached ```.glslCanvas``` elements will be stored in the ```windows.glslCanvases``` array.
 
 ### The JS way
  
@@ -48,11 +48,11 @@ var canvas = document.createElement("canvas");
 var sandbox = new GlslCanvas(canvas);
 ```
 
-In the case you need to reload the 
+In case you need to reload the shader:
 
 ### Reloading shaders from JS
 
-You can change the content of the shader as many times you want. Here are some examples:
+You can change the content of the shader as many times as you want. Here are some examples:
 
 ```javascript
 // Load only the Fragment Shader
