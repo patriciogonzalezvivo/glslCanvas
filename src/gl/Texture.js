@@ -157,10 +157,11 @@ export default class Texture {
             this.sourceType = 'element';
 
             if (element instanceof HTMLVideoElement) {
+                let updateInterval = 'updateInterval' in options ? options.updateInterval : 15;
                 element.addEventListener('canplaythrough', () => {
                     this.intervalID = setInterval(()=>{
                         this.update(options);
-                    }, 15);
+                    }, updateInterval);
                 }, true);
                 element.addEventListener('ended', () => {
                     element.currentTime = 0;
