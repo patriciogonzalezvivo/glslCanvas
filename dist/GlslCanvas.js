@@ -1229,10 +1229,11 @@ var Texture = function () {
                 this.sourceType = 'element';
 
                 if (element instanceof HTMLVideoElement) {
+                    var updateInterval = 'updateInterval' in options ? options.updateInterval : 15;
                     element.addEventListener('canplaythrough', function () {
                         _this2.intervalID = setInterval(function () {
                             _this2.update(options);
-                        }, 15);
+                        }, updateInterval);
                     }, true);
                     element.addEventListener('ended', function () {
                         element.currentTime = 0;
