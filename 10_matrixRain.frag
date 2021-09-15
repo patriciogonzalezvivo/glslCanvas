@@ -1,6 +1,5 @@
-// Author:
-// Title:
-
+// Author: Created by raja in 2014-05-01 
+// Title: Matrix Rain Shader https://www.shadertoy.com/view/lsXSDn
 
 
 #ifdef GL_ES

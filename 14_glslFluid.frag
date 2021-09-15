@@ -186,6 +186,7 @@ void main()
         data = vec4(0.5,0,0,0);}
         if (gl_FragCoord.y < 5.) data = iMouse;
         gl_FragColor = data;
+
     #elif defined (BUFFER_1)
     
         vec4 data2=colorFluid(uv, w, mo);

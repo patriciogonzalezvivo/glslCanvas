@@ -1,10 +1,12 @@
-
 // Author: Created by FabriceNeyret2 in 2017-04-03
 // Title: maze worms / graffitis 3b @ shadertoy
 // 20200624_glsl Particle_v2.qtz
 
 #ifdef GL_ES
 precision mediump float;
+#endif
+
+#if defined( BUFFER_0 )
 #endif
 
 uniform vec2 u_resolution;
@@ -15,9 +17,7 @@ float iTime=u_time;			              //更改 shadertoy->glsl editor
 vec2 iResolution=u_resolution;		      //更改 shadertoy->glsl editor 
 vec2 iMouse=u_mouse.xy;                   //更改 shadertoy->glsl editor
 //vec2 fragCoord = gl_FragCoord.xy;       //更改
-uniform sampler2D iChannel0;		      //更改
 uniform sampler2D u_buffer0;
-//uniform sampler2D u_buffer1;
 
 
 #define CS(a)  vec2(cos(a),sin(a))
@@ -83,13 +83,8 @@ void main()
   gl_FragColor=O;
 }
 
-/*
-    #if defined( BUFFER_0 )
-    gl_FragColor = O;
-    #else
-    gl_FragColor = O;
-    #endif
-*/
+
+
 
 
 
