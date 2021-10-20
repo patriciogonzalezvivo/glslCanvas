@@ -1,6 +1,6 @@
 // Author: Created by FabriceNeyret2 in 2017-04-03
 // Title: maze worms / graffitis 3b @ shadertoy
-// 20200624_glsl Particle_v5A(曲線圖).qtz
+// 20200624_glsl Particle_v5B(動態成像).qtz
 
 
 #ifdef GL_ES
@@ -62,7 +62,7 @@ float Random_Final(vec2 uv, float seed)         //亂數範圍 [-1,1]
 
 
 /////////////////////////////////
-const float r = 3.5, N = 100.; // width , number of worms
+const float r = 1.5, N = 30.; // width , number of worms
 
 void main()
 {
@@ -83,7 +83,7 @@ void main()
         //設定生長條件
         //若該起始點已有舊粒子，則不畫。//導致無法新生粒子，尤其光暈粒子即使消失後，依然佔有領土。改成threshold
         //if (T(O.xy).x>0.) O.w = 0.;                        // invalid start position
-        if (D(O.xy).g<0.25) O.w = 0.;               // 亮的地方產生粒子，進入暗的地方則死亡
+        if (D(O.xy).g<0.35) O.w = 0.;               // 亮的地方產生粒子，進入暗的地方則死亡
         gl_FragColor=O; return;
     } 
     
@@ -100,15 +100,15 @@ void main()
         
         //畫法一 若有乘以P.w，畫筆隨粒子生命增長而變淡
         //if (P.w>0.) O += smoothstep(r,0., length(P.xy-U))  // draw head if active
-        //                 *(.4)*(exp(-0.02*P.w))*vec4(0.9, 0.4, 0.1, 0.2);      // coloring scheme (exp(-0.02*P.w))
+        //                 *(.4)*(exp(-0.02*P.w))*vec4(0.9, 0.4, 0.1, 0.2);    // coloring scheme (exp(-0.02*P.w))
         //畫法二 持續累加
-        if (P.w>0.) O += glow(length( (P.xy-U)/R ), 1.4, 0.001)*(0.001)*vec4(0.9, 0.4, 0.1, 0.2);
+        //if (P.w>0.) O += glow(length( (P.xy-U)/R ), 1.4, 0.001)*(0.001)*vec4(0.9, 0.4, 0.1, 0.2);
         
         //畫法三 會消失，光暈粒子即便消失，領土還是被佔據無法產生新粒子
-        /*if (P.w>0.) {        
-        vec4 newO= glow(length( (P.xy-U)/R ), 1.4, 0.06)*(0.8)*vec4(0.9, 0.4, 0.1, 0.2);
+        if (P.w>0.) {        
+        vec4 newO= glow(length( (P.xy-U)/R ), 1.2, 0.08)*(0.8)*vec4(0.9, 0.4, 0.1, 0.2);
         O = mix(newO, O, 0.999);    //殘影比例：0.999 or 0.9999
-        }*/
+        }
 
     }
 
@@ -124,15 +124,14 @@ void main()
             
             //Taget Image作用。待處理           
             vec2 V = (-1.0)*M(P.xy).xy;             //讀取MotionMap資訊的RG色版，分別代表XY軸速度
-            float D = D(P.xy).g+(0.0*rnd(iTime));       //讀取DensityMap資訊的G色版
+            float D = D(P.xy).g+(0.3*rnd(iTime));       //讀取DensityMap資訊的G色版
             //，加上亂數有關鍵性影響!
           
             //float rot=atan(V.x, V.y);
            //float area=smoothstep(0.05, 0.15, length(V.xy));
             
-            //vec2 newPos= P.xy+ 0.*V.xy+ 1.*CS(3.28*gnoise(0.01*P.xy));  //target image
-            vec2 newPos= P.xy+ 0.*V.xy+ 1.*CS(3.28*gnoise(1.01*P.xy));  //target image
-            //vec2 newPos= P.xy+ CS(a);                         //parametric
+            //vec2 newPos= P.xy+ 0.*V.xy+ 1.*CS(6.28*gnoise(0.11*P.xy));  //target image
+            vec2 newPos= P.xy+ CS(a);                       //parametric
             //vec2 newPos= P.xy+ 4.0*CS(3.14 * rnd(U.x));   //random walk
             //vec2 newPos= P.xy+ CS(3.14*gnoise(0.05*P.xy));//perlin noise
             //vec2 newPos= P.xy+ CS(3.14*gnoise(0.05*P.xy))+ 2.0*CS(3.14 * rnd(U.x));//perlin noise+random
@@ -143,7 +142,7 @@ void main()
             if  ( O.x<0.|| O.x>R.x || O.y<0.|| O.y>R.y )  { O.w = 0.;} // 若超過邊界，生命age歸零
             if  ( T(P.xy+(r+2.)*CS(a)).w > 0.2 )  { O.w = 0.;} // 若碰撞其它粒子，生命age歸零            
             //if ( length(V)<0.01 ) { O.w = 0.; V=vec2(0.0);} //速度過小，生命age歸零
-            if ( D< 0.3) { O.w = 0.;}                //判定初始位置若過於明亮，生命age歸零   
+            if ( D< 0.3)    { O.w = 0.;}                //判定初始位置若過於明亮，生命age歸零   
         }
     }
     
@@ -152,3 +151,8 @@ void main()
   //O.w=1.0;    //需注意parametric模式會導致靜止不動
   gl_FragColor=O;
 }
+
+
+
+
+
