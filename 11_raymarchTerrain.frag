@@ -162,7 +162,7 @@ float t1=glow(t, 1.2-0.1*breathing, 0.3);
 //亂數作用雲霧
 float fog= fbm_2(0.6*uv+vec2(-0.2*iGlobalTime, -0.02*iGlobalTime))*0.5+0.3;
 
-gl_FragColor = vec4(vec3(t), 1.0);
+gl_FragColor = vec4(vec3(t-fog), 1.0);
 //gl_FragColor = vec4(vec3(t1), 1.0); //*vec3(1.0, 0.5, 0.25)
 //gl_FragColor = vec4(vec3(fog), 1.0); //*vec3(1.0, 0.5, 0.25)
 //gl_FragColor = vec4(vec3(t1+fog), 1.0); //導致輪廓浮動
