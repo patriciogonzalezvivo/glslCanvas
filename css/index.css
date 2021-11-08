@@ -1,0 +1,345 @@
+@charset "utf-8";
+/* CSS Document */
+
+@import url("rwd.css");
+
+@font-face {
+  font-family: text;
+  src: url(Kaiso.otf);
+}
+
+@font-face {
+  font-family: typewriter;
+  src: url(Typewriter.ttf);
+}
+
+@font-face {
+  font-family: story;
+  src: url(SourceHanSerif-Regular.ttc);
+}
+
+*{
+	padding:0;
+	margin:0;
+}
+
+::-moz-selection{ /*Firefox*/
+	color: rgba(255, 255, 255, 1);
+	background: #111;
+}
+
+::selection{
+	color: rgba(255, 255, 255, 1);
+	background: #111;
+}
+
+body{
+	font-family: 'Josefin Sans', sans-serif;
+	color:#fff;
+	background: #101515;
+}
+
+/* header */
+header{
+	position: -webkit-sticky; /*Safari*/
+	position: sticky;
+	
+	color:#fff;
+	text-align:center;
+	top: 0;
+	z-index: 2000;
+	box-sizing:border-box;
+}
+
+.Logo a{
+	display: block;
+	color: #fff;
+	text-decoration: none;
+	text-align:left;
+	transition: 0.3s;
+	font-size: 25px;
+	
+	margin:20px;
+}
+
+.Logo a:hover{
+	color: #777;
+	
+}
+
+.menu{
+	position: absolute;
+	top: -5px;
+	right: 25px;
+	font-size: 35px;
+	color: #fff;
+	display: block;
+	transition: 0.3s;
+}
+
+.menu:hover{
+	color: #777;
+	cursor: pointer;
+}
+
+.sidenav {
+	-webkit-flex: none;
+	flex: none;
+	
+	height: 100%; /* 100% Full-height */
+	width: 0; /* 0 width - change this with JavaScript */
+	position:fixed; /* Stay in place */
+	z-index: 1; /* Stay on top */
+	top: 0; /* Stay at the top */
+	right: 0;
+	background-color: #111; /* Black*/
+	overflow-x: hidden; /* Disable horizontal scroll */
+	padding-top: 60px; /* Place content 60px from the top */
+	transition: 1.2s; /* 0.5 second transition effect to slide in the sidenav */
+	box-sizing: border-box;
+}
+
+.sidenav .box{ /* nav文字 */
+	padding: 40px 60px 0px 60px;
+	font-size: 18px;
+	color: #fff;
+	line-height:1.2em;
+	display: block;
+	text-align: left;
+}
+
+.sidenav .box li{ /* nav文字 */
+	padding: 20px 30px 5px 30px;
+	font-size: 16px;
+	line-height:1em;
+	color: #777;
+	display: block;
+	text-decoration: none;
+}
+
+.sidenav .box p{
+	transition: 0.3s;
+}
+
+.sidenav .box p:hover {
+	color: #777;
+	text-decoration: line-through;
+	cursor: pointer;
+}
+
+.sidenav a{
+	transition: 0.3s;
+	text-decoration: none;
+}
+
+.sidenav .closebtn {
+	position: absolute;
+	top: -5px;
+	right: 25px;
+	font-size: 60px;
+	color: #fff;
+	display: block;
+	transition: 0.3s;
+}
+
+.sidenav .closebtn:hover{
+	color: #777;
+	cursor: pointer;
+}
+
+/* body */
+.container{
+	display: -webkit-flex;
+	display: flex;
+	height: auto;
+	/*important for setting footer or other nonflex items*/
+	/*min-height: 1400px;*/
+}
+
+section{
+	display: -webkit-flex;
+	display: flex;
+	-webkit-flex: 1;
+	flex: 1;
+	-webkit-align-items: center;
+	align-items: center;
+	-webkit-justify-content: center;
+	justify-content: center;
+	height:auto;
+	box-sizing:border-box;
+	padding-top:0;
+}
+
+.conbox{
+	position:relative;
+	width:100%;
+	height:100%;
+	overflow: visible;
+}
+
+.content{
+	position:absolute;
+	top:0;
+	left:0;
+	width:100%;
+	display:none;
+	box-sizing:border-box;
+	
+	padding:0;
+	text-align:center;
+}
+
+.content img{
+	width: 100%;
+}
+
+#home{
+	position:fixed;
+	height:100%;
+	width: auto;
+}
+
+/* swiper */
+:root{
+    --swiper-pagination-color: #fff;
+}
+
+.swiper-slide {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    -webkit-justify-content: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    -webkit-align-items: center;
+    align-items: center;	
+}
+
+.swiper-slide img {
+    display: block;
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+	padding-bottom: 60px; /*留空間放大標*/
+	background: white; /*底色選白蓋字*/
+}
+
+.swiper-slide p{
+	position: absolute;
+	bottom:40px;
+	font-size:45px;
+	-webkit-font-smoothing:antialiased;
+	line-height: 1;
+	white-space: nowrap;
+	color: #111;
+	transition: 0.5s;
+}
+
+.swiper-slide p:hover{
+	color:#fff;
+}
+
+
+
+.nav_icon{
+	color: #111;
+	font-size: 30px;
+	line-height: 2em;
+	transition:  0.3s;
+}
+
+/* totop */
+/*
+aside{
+	position: fixed;
+	right: 50px;
+	bottom: 10px;
+	z-index: 100000;//
+}
+
+.totop{
+	font-size: 35px;
+	color: #fff;
+	transition: 0.3s;
+}
+
+.totop:hover{
+	color: #777;
+}*/
+
+
+/* footer */
+footer{
+	/*
+	clear: both;
+	display: block;
+	height: 100px;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 80px 0px;
+	text-align: center;
+	*/
+
+	clear: both;
+	display: block;
+	font-size: 12px;
+	text-align: center;
+}
+
+/* For tablets */
+@media only screen and (min-width: 768px) {
+	header{
+		text-align: left;
+	}
+	
+	.Logo a{
+		margin:50px;
+		font-size: 35px 
+	}
+	
+	.menu{
+		top: 0;
+		right: 50px;
+		font-size: 30px;
+	}
+	
+	.sidenav .box{ /* nav文字 */
+		display: table-cell;
+		box-sizing: content-box;
+		font-size: 20px;
+	}
+
+	.sidenav .box li{ /* nav文字 */
+		/*padding: 20px 30px 5px 30px;*/
+		font-size: 18px;
+	}
+	
+	.sidenav .closebtn {
+		top: 40px;
+		right: 50px;
+	}
+	
+	section{
+		padding-top: 15px;
+	}
+	
+	#home{
+		position:fixed;
+		width: 100%;
+	}
+	
+	
+	.swiper-slide p{
+		bottom: 27px;
+		left: 245px;
+		font-size: 75px;
+	}	
+	
+	.swiper-slide img {
+		height: 100%;
+	}
+}
