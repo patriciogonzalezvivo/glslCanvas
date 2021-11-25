@@ -1,25 +1,292 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
 <head>
-    <meta charset="utf-8">
-    <title>GlslCanvas</title>
-    <script type="text/javascript" src="dist/GlslCanvas.js"></script>
-    <style>
-        body {
-            background: #101515;
-        }
-        #glslCanvas {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content=" width=device-width; initial-scale=1.0;">
+<title>GlslCanvas | CMHsieh</title>
+	<!--icon
+	<link href="images/dark_blue.png" rel="shortcut icon" type="image/ico"/>-->
+		
+	<!--google font-->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@500&display=swap" rel="stylesheet">
+	
+	<!--css-->
+	<link href="css/index.css" rel="stylesheet" type="text/css">
+
+	<!--js-->
+	<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+	<script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
+	<script type="text/javascript" src="js/index.js"></script>
+
+	<!---swiper-->
+	<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.css" />
+	<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+
+	<script src="https://unpkg.com/swiper/swiper-bundle.js"></script>
+	<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+	
+	<!--font awesome-->
+	<script src="https://kit.fontawesome.com/bade478ead.js" crossorigin="anonymous"></script>
+	
+	<!-- add fancyBox -->
+	<link rel="stylesheet" href="fancybox/source/jquery.fancybox.css?v=2.1.5" type="text/css" media="screen" />
+	<script type="text/javascript" src="fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>	
 </head>
+
+<header>
+	<div class="Logo"><a href="index.html">CMHsieh</a></div>
+	<span onclick="openNav()"><div class="menu"><i class="fas fa-bars"></i></div></span>
+	<div id="SideNav" class="sidenav">
+		<div><a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a></div>
+		<nav>
+			<div class="box"><p>HOME</p></div>
+			<div class="box"><p>NOISE</p>
+				<ul>
+					<li>Perlin</li>
+					<li>Ray Marching</li>
+				</ul>
+			</div>
+			<div class="box"><p>CG</p>
+				<ul>
+					<li>Computer Graphics</li>
+				</ul>
+			</div>
+			<div class="box"><p>UNREAL</p>
+				<ul>
+					<li>NPR</li>
+					<li>Style Transfer</li>
+				</ul>
+			</div>
+		</nav>	
+	</div>
+</header>
+	
 <body>
-    <canvas id="glslCanvas" data-fragment-url="11_breathingGlow.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
+	<div class="container" id="top">
+	<section>
+	<div class="conbox">
+		<div class="content" id="home">
+			<canvas id="glslCanvas" data-fragment="// Author:CMH
+// Title:BreathingGlow+noise
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+
+float glow(float d, float str, float thickness){
+    return thickness / pow(d, str);
+}
+
+vec2 hash2( vec2 x )            //亂數範圍 [-1,1]
+{
+    const vec2 k = vec2( 0.3183099, 0.3678794 );
+    x = x*k + k.yx;
+    return -1.0 + 2.0*fract( 16.0 * k*fract( x.x*x.y*(x.x+x.y)) );
+}
+float gnoise( in vec2 p )       //亂數範圍 [-1,1]
+{
+    vec2 i = floor( p );
+    vec2 f = fract( p );
+    
+    vec2 u = f*f*(3.0-2.0*f);
+
+    return mix( mix( dot( hash2( i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ), 
+                            dot( hash2( i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
+                         mix( dot( hash2( i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ), 
+                            dot( hash2( i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+}
+#define Use_Perlin
+//#define Use_Value
+float noise( in vec2 p )        //亂數範圍 [-1,1]
+{
+#ifdef Use_Perlin    
+return gnoise(p);   //gradient noise
+#elif defined Use_Value
+return vnoise(p);       //value noise
+#endif    
+return 0.0;
+}
+float fbm(in vec2 uv)       //亂數範圍 [-1,1]
+{
+    float f;                                                //fbm - fractal noise (4 octaves)
+    mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
+    f   = 0.5000*noise( uv ); uv = m*uv;          
+    f += 0.2500*noise( uv ); uv = m*uv;
+    f += 0.1250*noise( uv ); uv = m*uv;
+    f += 0.0625*noise( uv ); uv = m*uv;
+    return f;
+}
+
+
+void main() {
+    vec2 uv = gl_FragCoord.xy/u_resolution.xy;
+    uv.x *= u_resolution.x/u_resolution.y;
+    uv= uv*2.0-1.0;
+    
+    //陰晴圓缺
+    float pi=3.14159;
+    float theta=2.0*pi*u_time/8.0;
+    vec2 point=vec2(sin(theta), cos(theta));
+    float dir= dot(point, (uv))+0.55;
+    
+    //亂數作用雲霧
+    float fog= fbm(0.4*uv+vec2(-0.1*u_time, -0.02*u_time))*0.6+0.1;
+
+    //定義圓環
+    float dist = length(uv);
+    float circle_dist = abs(dist-0.512);                                //光環大小
+    
+    //動態呼吸
+    float breathing=sin(2.0*u_time/5.0*pi)*0.5+0.2;                     //option1
+    //float breathing=(exp(sin(u_time/2.0*pi)) - 0.36787944)*0.42545906412;         //option2 錯誤
+     //float breathing=(exp(sin(u_time/2.0*pi)) - 0.36787944)*0.42545906412;                //option2 正確
+    float strength =(0.2*breathing+0.180);          //[0.2~0.3]         //光暈強度加上動態時間營造呼吸感
+    float thickness=(0.1*breathing+0.084);          //[0.1~0.2]         //光環厚度 營造呼吸感
+    float glow_circle = glow(circle_dist, strength, thickness);
+    gl_FragColor = vec4((vec3(glow_circle)+fog)*dir*vec3(1.0, 0.5, 0.25),1.0);
+}
+
+
+
+
+
+
+
+/*
+// Author:CMH
+// Title:BreathingGlow
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+
+float glow(float d, float str, float thickness){
+    return thickness / pow(d, str);
+}
+
+void main() {
+    vec2 uv = gl_FragCoord.xy/u_resolution.xy;
+    uv.x *= u_resolution.x/u_resolution.y;
+    uv= uv*2.0-1.0;
+    
+    //陰晴圓缺
+    float pi=3.14159;
+    float theta=2.0*pi*u_time/2.144;
+    vec2 point=vec2(sin(theta), cos(theta));
+    float dir= dot(point, normalize(uv));
+
+    //定義圓環
+    float dist = length(uv);
+    float circle_dist = abs(dist-0.512);								//光環大小
+    
+    //動態呼吸
+    //float breathing=sin(u_time/2.0*pi)*0.5+0.5;						//option1
+    //float breathing=exp(sin(u_time/2.0*pi) - 0.36787944)*0.42545906412; 			//option2 錯誤
+     float breathing=(exp(sin(u_time/2.0*pi)) - 0.36787944)*0.42545906412; 			//option2 正確
+    float strength =(0.2*breathing*dir+0.180);			//[0.2~0.3]			//光暈強度加上動態時間營造呼吸感
+    float thickness=(0.1*breathing+0.084);			//[0.1~0.2]			//光環厚度 營造呼吸感
+    float glow_circle = glow(circle_dist, strength, thickness);
+    gl_FragColor = vec4(vec3(glow_circle)*vec3(1.0, 0.5, 0.25),1.0);
+}
+*/
+" data-textures="data/moon.jpeg, data/Taipei101_1.jpeg"></canvas>
+			
+			<!--
+			<div class="swiper-container" id="s_pic">
+				<div class="swiper-wrapper">
+				<div class="swiper-slide"><img src="images/p1.png"/><p>Escape Room</p></div>
+				<div class="swiper-slide"><img src="images/p2.png"/><p>Start Journey</p></div>
+				<div class="swiper-slide"><img src="images/p3.png"/><p>My Dear</p></div>
+				<div class="swiper-slide"><img src="images/p4.png"/><p>Backtracking</p></div>
+				<div class="swiper-slide"><img src="images/p5.png"/><p>Those Days</p></div>
+				<div class="swiper-slide"><img src="images/p6.png"/><p>Freedom</p></div>
+				</div>
+				<div class="swiper-pagination"></div>
+			</div> -->	  
+
+		</div>
+
+		<div class="content">
+			<h1>〇 NOISE 〇</h1>
+				
+			<div class="row">
+				<!--套用相簿fancybox效果-->
+				<div class="col-m-6 col-6">
+				<a class="fancybox" rel="gallery1" href="images/1.png" title="Something Spooky by Your Side..."><img src="images/1.png"></a>
+					<a class="fancybox" rel="gallery1" href="images/3.png" title="Start Journey !"></a>
+					<a class="fancybox" rel="gallery1" href="images/4.png" title="Shadow of Mermiad"></a>
+					<a class="fancybox" rel="gallery1" href="images/5.png" title="Oops.. You're trapped."></a>
+					<a class="fancybox" rel="gallery1" href="images/6.png" title="Secrets in Cabin !?"></a>
+
+					<p>Chapter 01</p>
+				</div>
+			</div>
+			<footer>演算美學實驗室 | The Computing Aesthetics Lab engages in simulation algorithms, aesthetics and performing arts. by CMH,IAA,NYCU.</footer>
+		</div>
+		
+		<div class="content">
+			<h1>〇 CG 〇</h1>
+			
+		
+			<footer>演算美學實驗室 | The Computing Aesthetics Lab engages in simulation algorithms, aesthetics and performing arts. by CMH,IAA,NYCU.</footer>
+		</div>
+		
+		<div class="content">
+			<h1>〇 UNREAL 〇</h1>			
+			
+			<footer>演算美學實驗室 | The Computing Aesthetics Lab engages in simulation algorithms, aesthetics and performing arts. by CMH,IAA,NYCU.</footer>
+		</div>	
+	</div>
+	</section>
+	</div>
+	
+	<!-- aside 
+	<aside>
+		<a href="#top">
+			<div class="totop"><i class="fas fa-caret-square-up"></i></div>
+		</a>
+	</aside>-->
+
+	<!-- Side Bar close btn-->
+	<script>
+		function openNav() {
+			document.getElementById("SideNav").style.width = "100%";
+		}
+		function closeNav() {
+			document.getElementById("SideNav").style.width = "0";
+		}
+	</script>
+	
+	<!-- Initialize Swiper -->
+	<script>
+		var swiper = new Swiper("#s_pic", {
+			speed:1000,
+			spaceBetween: 500,
+			centeredSlides: true,
+			effect: "fade",
+			autoplay: {
+		  		delay: 3500,
+		  		disableOnInteraction: false,
+			},
+			pagination: {
+		  		el: ".swiper-pagination",
+		  		type: "progressbar",
+		  		clickable: true,
+			},
+	  	});
+	</script>
 </body>
+
+<!--glslCanvas-->
 <script>
     var canvas = document.getElementById("glslCanvas");
     var sandbox = new GlslCanvas(canvas);
