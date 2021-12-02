@@ -18,10 +18,16 @@
   src: url(SourceHanSerif-Regular.ttc);
 }
 
+@font-face {
+  font-family: chinese;
+  src: url(隸書繁.ttf);
+}
+
 *{
 	padding:0;
 	margin:0;
 	font-size: 80%;
+  	font-family: typewriter, chinese;
 }
 
 ::-moz-selection{ /*Firefox*/
