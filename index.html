@@ -42,6 +42,7 @@
 		<div><a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a></div>
 		<nav>
 			<div class="box"><p>HOME</p></div>
+			<div class="box"><p>ABOUT</p></div>
 			<div class="box"><p>NOISE</p>
 				<ul>
 					<li>Perlin</li>
@@ -68,137 +69,7 @@
 	<section>
 	<div class="conbox">
 		<div class="content" id="home">
-			<canvas id="glslCanvas" data-fragment="// Author:CMH
-// Title:BreathingGlow+noise
-
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-uniform vec2 u_resolution;
-uniform vec2 u_mouse;
-uniform float u_time;
-
-float glow(float d, float str, float thickness){
-    return thickness / pow(d, str);
-}
-
-vec2 hash2( vec2 x )            //亂數範圍 [-1,1]
-{
-    const vec2 k = vec2( 0.3183099, 0.3678794 );
-    x = x*k + k.yx;
-    return -1.0 + 2.0*fract( 16.0 * k*fract( x.x*x.y*(x.x+x.y)) );
-}
-float gnoise( in vec2 p )       //亂數範圍 [-1,1]
-{
-    vec2 i = floor( p );
-    vec2 f = fract( p );
-    
-    vec2 u = f*f*(3.0-2.0*f);
-
-    return mix( mix( dot( hash2( i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ), 
-                            dot( hash2( i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
-                         mix( dot( hash2( i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ), 
-                            dot( hash2( i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
-}
-#define Use_Perlin
-//#define Use_Value
-float noise( in vec2 p )        //亂數範圍 [-1,1]
-{
-#ifdef Use_Perlin    
-return gnoise(p);   //gradient noise
-#elif defined Use_Value
-return vnoise(p);       //value noise
-#endif    
-return 0.0;
-}
-float fbm(in vec2 uv)       //亂數範圍 [-1,1]
-{
-    float f;                                                //fbm - fractal noise (4 octaves)
-    mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
-    f   = 0.5000*noise( uv ); uv = m*uv;          
-    f += 0.2500*noise( uv ); uv = m*uv;
-    f += 0.1250*noise( uv ); uv = m*uv;
-    f += 0.0625*noise( uv ); uv = m*uv;
-    return f;
-}
-
-
-void main() {
-    vec2 uv = gl_FragCoord.xy/u_resolution.xy;
-    uv.x *= u_resolution.x/u_resolution.y;
-    uv= uv*2.0-1.0;
-    
-    //陰晴圓缺
-    float pi=3.14159;
-    float theta=2.0*pi*u_time/8.0;
-    vec2 point=vec2(sin(theta), cos(theta));
-    float dir= dot(point, (uv))+0.55;
-    
-    //亂數作用雲霧
-    float fog= fbm(0.4*uv+vec2(-0.1*u_time, -0.02*u_time))*0.6+0.1;
-
-    //定義圓環
-    float dist = length(uv);
-    float circle_dist = abs(dist-0.512);                                //光環大小
-    
-    //動態呼吸
-    float breathing=sin(2.0*u_time/5.0*pi)*0.5+0.2;                     //option1
-    //float breathing=(exp(sin(u_time/2.0*pi)) - 0.36787944)*0.42545906412;         //option2 錯誤
-     //float breathing=(exp(sin(u_time/2.0*pi)) - 0.36787944)*0.42545906412;                //option2 正確
-    float strength =(0.2*breathing+0.180);          //[0.2~0.3]         //光暈強度加上動態時間營造呼吸感
-    float thickness=(0.1*breathing+0.084);          //[0.1~0.2]         //光環厚度 營造呼吸感
-    float glow_circle = glow(circle_dist, strength, thickness);
-    gl_FragColor = vec4((vec3(glow_circle)+fog)*dir*vec3(1.0, 0.5, 0.25),1.0);
-}
-
-
-
-
-
-
-
-/*
-// Author:CMH
-// Title:BreathingGlow
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-uniform vec2 u_resolution;
-uniform vec2 u_mouse;
-uniform float u_time;
-
-float glow(float d, float str, float thickness){
-    return thickness / pow(d, str);
-}
-
-void main() {
-    vec2 uv = gl_FragCoord.xy/u_resolution.xy;
-    uv.x *= u_resolution.x/u_resolution.y;
-    uv= uv*2.0-1.0;
-    
-    //陰晴圓缺
-    float pi=3.14159;
-    float theta=2.0*pi*u_time/2.144;
-    vec2 point=vec2(sin(theta), cos(theta));
-    float dir= dot(point, normalize(uv));
-
-    //定義圓環
-    float dist = length(uv);
-    float circle_dist = abs(dist-0.512);								//光環大小
-    
-    //動態呼吸
-    //float breathing=sin(u_time/2.0*pi)*0.5+0.5;						//option1
-    //float breathing=exp(sin(u_time/2.0*pi) - 0.36787944)*0.42545906412; 			//option2 錯誤
-     float breathing=(exp(sin(u_time/2.0*pi)) - 0.36787944)*0.42545906412; 			//option2 正確
-    float strength =(0.2*breathing*dir+0.180);			//[0.2~0.3]			//光暈強度加上動態時間營造呼吸感
-    float thickness=(0.1*breathing+0.084);			//[0.1~0.2]			//光環厚度 營造呼吸感
-    float glow_circle = glow(circle_dist, strength, thickness);
-    gl_FragColor = vec4(vec3(glow_circle)*vec3(1.0, 0.5, 0.25),1.0);
-}
-*/
-" data-textures="data/moon.jpeg, data/Taipei101_1.jpeg"></canvas>
+			 <canvas class="glslCanvas" data-fragment-url="11_breathingGlow.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
 			
 			<!--
 			<div class="swiper-container" id="s_pic">
@@ -214,36 +85,87 @@ void main() {
 			</div> -->	  
 
 		</div>
+		
+		<div class="content">
+			<h1>〇 ABOUT 〇</h1>
+			
+			<p>
+				<br><br>
+				<br><br>
+				
+				演算美學實驗室 | The Computing Aesthetics Lab <br><br>
+				engages in simulation algorithms, <br><br>
+				aesthetics and performing arts. <br><br>
+				by CMH,IAA,NYCU.
+				
+				<br><br>
+				<br><br>
+				
+				流動，是一種極細膩、看見場域的運動、純粹地。 simplicity <br><br>
+				群體，一種糾纏、複合、蘊含關係的運動。 complexity <br><br>
+				演化，一種可變異、天擇下的多樣性、適應與消逝。 diversity <br><br>
+				熵亂，一種直覺、不依循常規的隨興之美、深刻和諧著。 synchronicity	<br><br>
+			</p>
+			
+		
+		</div>
 
 		<div class="content">
 			<h1>〇 NOISE 〇</h1>
-				
+			<!--
 			<div class="row">
-				<!--套用相簿fancybox效果-->
 				<div class="col-m-6 col-6">
-				<a class="fancybox" rel="gallery1" href="images/1.png" title="Something Spooky by Your Side..."><img src="images/1.png"></a>
+					<a class="fancybox" rel="gallery1" href="images/1.png" title="Something Spooky by Your Side..."><img src="images/1.png"></a>
 					<a class="fancybox" rel="gallery1" href="images/3.png" title="Start Journey !"></a>
 					<a class="fancybox" rel="gallery1" href="images/4.png" title="Shadow of Mermiad"></a>
 					<a class="fancybox" rel="gallery1" href="images/5.png" title="Oops.. You're trapped."></a>
 					<a class="fancybox" rel="gallery1" href="images/6.png" title="Secrets in Cabin !?"></a>
-
-					<p>Chapter 01</p>
 				</div>
-			</div>
-			<footer>演算美學實驗室 | The Computing Aesthetics Lab engages in simulation algorithms, aesthetics and performing arts. by CMH,IAA,NYCU.</footer>
+			</div>-->
+			
+			<canvas id="glslCanvas" data-fragment-url="6_hatching.frag" width="800" height="600" data-textures="data/MonaLisa.jpg, data/hatch_0.jpg, data/hatch_1.jpg, data/hatch_2.jpg, data/hatch_3.jpg, data/hatch_4.jpg, data/hatch_5.jpg, data/pina.mp4"></canvas>
+
+			<canvas class="glslCanvas" data-fragment-url="9_pinaFBO.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
+			
+			<canvas class="glslCanvas" data-fragment-url="10_matrixRain.frag" width="800" height="600" data-textures="data/Taipei101_1.jpg, data/pina.mp4"></canvas>
+			
+			<canvas class="glslCanvas" data-fragment-url="10_matrixRain.frag" width="800" height="600" data-textures="data/Taipei101_1.jpg, data/pina.mp4"></canvas>
+			
+			<canvas class="glslCanvas" data-fragment-url="11_raymarchTerrain.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
+			
+			<canvas class="glslCanvas" data-fragment-url="11_breathingGlow.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
+				
+			<canvas class="glslCanvas" data-fragment-url="13_glslParticleFBO.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
+			
+			<canvas class="glslCanvas" data-fragment-url="13_glslParticleMona.frag" width="800" height="600" data-textures="data/MonaLisa.jpg, data/Taipei101_1.jpg"></canvas>
+			
+			<canvas class="glslCanvas" data-fragment-url="13_glslParticleMonaDyno.frag" width="800" height="600" data-textures="data/MonaLisa.jpg, data/Taipei101_1.jpg"></canvas>
+			
+			<canvas class="glslCanvas" data-fragment-url="14_glslFluid.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
+			
+			<canvas class="glslCanvas" data-fragment-url="15_opticalFlow.frag" width="800" height="600" data-textures="data/moon.jpg, data/pina.mp4"></canvas>
+			
+			<canvas class="glslCanvas" data-fragment-url="20_ProteanClouds.frag" width="800" height="600" data-textures="data/Taipei101_1.jpg"></canvas>
+			
+			<canvas class="glslCanvas" data-fragment-url="21_perlinSeaCloud.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
+			
 		</div>
 		
 		<div class="content">
 			<h1>〇 CG 〇</h1>
 			
 		
-			<footer>演算美學實驗室 | The Computing Aesthetics Lab engages in simulation algorithms, aesthetics and performing arts. by CMH,IAA,NYCU.</footer>
 		</div>
 		
 		<div class="content">
-			<h1>〇 UNREAL 〇</h1>			
+			<h1>〇 UNREAL 〇</h1>		
 			
-			<footer>演算美學實驗室 | The Computing Aesthetics Lab engages in simulation algorithms, aesthetics and performing arts. by CMH,IAA,NYCU.</footer>
+			<canvas id="glslCanvas" data-fragment-url="12_QuadtreeMonaLisa.frag" width="800" height="600" data-textures="data/MonaLisa.jpg, data/Taipei101_1.jpg"></canvas>
+			
+			<canvas class="glslCanvas" data-fragment-url="12_QuadtreeFBO.frag" width="800" height="600" data-textures="data/MonaLisa.jpg, data/pina.mp4"></canvas>
+			
+			
+			
 		</div>	
 	</div>
 	</section>
