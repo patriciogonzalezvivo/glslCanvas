@@ -89,6 +89,13 @@ export default class Texture {
             if (isVideo) {
                 element = document.createElement('video');
                 element.autoplay = true;
+                
+                
+                element.muted = true; /* required for modern browsers to autoplay video */
+                setTimeout(function () {
+                    element.play() /* doesn't block promise but needs a more elegant solution */
+                }, 1);
+                
                 options.filtering = 'nearest';
                 // element.preload = 'auto';
                 // element.style.display = 'none';
