@@ -2,214 +2,30 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content=" width=device-width; initial-scale=1.0;">
-<title>GlslCanvas | CMHsieh</title>
-	<!--icon
-	<link href="images/dark_blue.png" rel="shortcut icon" type="image/ico"/>-->
-		
-	<!--google font-->
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@500&display=swap" rel="stylesheet">
-	
-	<!--css-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMHsieh | GlslCanvas</title>
 	<link href="css/index.css" rel="stylesheet" type="text/css">
-
+	<link href="../images/sakura.ico" rel="shortcut icon" type="image/ico"/>
 	<!--js-->
 	<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
 	<script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
-	<script type="text/javascript" src="js/index.js"></script>
-
-	<!---swiper-->
-	<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.css" />
-	<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
-
-	<script src="https://unpkg.com/swiper/swiper-bundle.js"></script>
-	<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-	
+	<script type="text/javascript" src="js/0602.js"></script>
 	<!--font awesome-->
 	<script src="https://kit.fontawesome.com/bade478ead.js" crossorigin="anonymous"></script>
-	
-	<!-- add fancyBox -->
+	<!-- Add fancyBox -->
 	<link rel="stylesheet" href="fancybox/source/jquery.fancybox.css?v=2.1.5" type="text/css" media="screen" />
-	<script type="text/javascript" src="fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>	
+	<script type="text/javascript" src="fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
 </head>
-
 <header>
-	<div class="Logo"><a href="index.html">CMHsieh</a></div>
-	<span onclick="openNav()"><div class="menu"><i class="fas fa-bars"></i></div></span>
-	<div id="SideNav" class="sidenav">
-		<div><a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a></div>
-		<nav>
-			<div class="box"><p>HOME</p></div>
-			<div class="box"><p>ABOUT</p></div>
-			<div class="box"><p>NOISE</p>
-				<ul>
-					<li>Perlin</li>
-					<li>Ray Marching</li>
-				</ul>
-			</div>
-			<div class="box"><p>CG</p>
-				<ul>
-					<li>Computer Graphics</li>
-				</ul>
-			</div>
-			<div class="box"><p>UNREAL</p>
-				<ul>
-					<li>NPR</li>
-					<li>Style Transfer</li>
-				</ul>
-			</div>
-		</nav>	
-	</div>
+	<div class="Logo">CMHsieh</div>
 </header>
 	
 <body>
-	<div class="container" id="top">
-	<section>
-	<div class="conbox">
-		<div class="content" id="home">
-			 <canvas id="glslCanvas" data-fragment-url="11_breathingGlow.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
-			
-			<!--
-			<div class="swiper-container" id="s_pic">
-				<div class="swiper-wrapper">
-				<div class="swiper-slide"><img src="images/p1.png"/><p>Escape Room</p></div>
-				<div class="swiper-slide"><img src="images/p2.png"/><p>Start Journey</p></div>
-				<div class="swiper-slide"><img src="images/p3.png"/><p>My Dear</p></div>
-				<div class="swiper-slide"><img src="images/p4.png"/><p>Backtracking</p></div>
-				<div class="swiper-slide"><img src="images/p5.png"/><p>Those Days</p></div>
-				<div class="swiper-slide"><img src="images/p6.png"/><p>Freedom</p></div>
-				</div>
-				<div class="swiper-pagination"></div>
-			</div> -->	  
-
-		</div>
-		
-		<div class="content">
-			<h1>〇 ABOUT 〇</h1>
-			
-			<p>
-				<br><br>
-				<br><br>
-				
-				演算美學實驗室 | The Computing Aesthetics Lab <br><br>
-				engages in simulation algorithms, <br><br>
-				aesthetics and performing arts. <br><br>
-				by CMH,IAA,NYCU.
-				
-				<br><br>
-				<br><br>
-				
-				流動，是一種極細膩、看見場域的運動、純粹地。 simplicity <br><br>
-				群體，一種糾纏、複合、蘊含關係的運動。 complexity <br><br>
-				演化，一種可變異、天擇下的多樣性、適應與消逝。 diversity <br><br>
-				熵亂，一種直覺、不依循常規的隨興之美、深刻和諧著。 synchronicity	<br><br>
-			</p>
-			
-		
-		</div>
-
-		<div class="content">
-			<h1>〇 NOISE 〇</h1>
-			<!--
-			<div class="row">
-				<div class="col-m-6 col-6">
-					<a class="fancybox" rel="gallery1" href="images/1.png" title="Something Spooky by Your Side..."><img src="images/1.png"></a>
-					<a class="fancybox" rel="gallery1" href="images/3.png" title="Start Journey !"></a>
-					<a class="fancybox" rel="gallery1" href="images/4.png" title="Shadow of Mermiad"></a>
-					<a class="fancybox" rel="gallery1" href="images/5.png" title="Oops.. You're trapped."></a>
-					<a class="fancybox" rel="gallery1" href="images/6.png" title="Secrets in Cabin !?"></a>
-				</div>
-			</div>-->
-			
-			<!--
-			<canvas id="glslCanvas" data-fragment-url="6_hatching.frag" width="800" height="600" data-textures="data/MonaLisa.jpg, data/hatch_0.jpg, data/hatch_1.jpg, data/hatch_2.jpg, data/hatch_3.jpg, data/hatch_4.jpg, data/hatch_5.jpg, data/pina.mp4"></canvas>
-
-			<canvas class="glslCanvas" data-fragment-url="9_pinaFBO.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
-			
-			<canvas class="glslCanvas" data-fragment-url="10_matrixRain.frag" width="800" height="600" data-textures="data/Taipei101_1.jpg, data/pina.mp4"></canvas>
-			
-			<canvas class="glslCanvas" data-fragment-url="10_matrixRain.frag" width="800" height="600" data-textures="data/Taipei101_1.jpg, data/pina.mp4"></canvas>
-			
-			<canvas class="glslCanvas" data-fragment-url="11_raymarchTerrain.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
-			
-			<canvas class="glslCanvas" data-fragment-url="11_breathingGlow.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
-				
-			<canvas class="glslCanvas" data-fragment-url="13_glslParticleFBO.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
-			
-			<canvas class="glslCanvas" data-fragment-url="13_glslParticleMona.frag" width="800" height="600" data-textures="data/MonaLisa.jpg, data/Taipei101_1.jpg"></canvas>
-			
-			<canvas class="glslCanvas" data-fragment-url="13_glslParticleMonaDyno.frag" width="800" height="600" data-textures="data/MonaLisa.jpg, data/Taipei101_1.jpg"></canvas>
-			
-			<canvas class="glslCanvas" data-fragment-url="14_glslFluid.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
-			
-			<canvas class="glslCanvas" data-fragment-url="15_opticalFlow.frag" width="800" height="600" data-textures="data/moon.jpg, data/pina.mp4"></canvas>
-			
-			<canvas class="glslCanvas" data-fragment-url="20_ProteanClouds.frag" width="800" height="600" data-textures="data/Taipei101_1.jpg"></canvas>
-			
-			<canvas class="glslCanvas" data-fragment-url="21_perlinSeaCloud.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas>
-			-->
-			
-		</div>
-		
-		<div class="content">
-			<h1>〇 CG 〇</h1>
-			
-		
-		</div>
-		
-		<div class="content">
-			<h1>〇 UNREAL 〇</h1>		
-			
-			<canvas class="glslCanvas" data-fragment-url="12_QuadtreeMonaLisa.frag" width="800" height="600" data-textures="data/MonaLisa.jpg, data/Taipei101_1.jpg"></canvas>
-			
-			<canvas class="glslCanvas" data-fragment-url="12_QuadtreeFBO.frag" width="800" height="600" data-textures="data/MonaLisa.jpg, data/pina.mp4"></canvas>
-			
-			
-			
-		</div>	
-	</div>
-	</section>
-	</div>
-	
-	<!-- aside 
-	<aside>
-		<a href="#top">
-			<div class="totop"><i class="fas fa-caret-square-up"></i></div>
-		</a>
-	</aside>-->
-
-	<!-- Side Bar close btn-->
-	<script>
-		function openNav() {
-			document.getElementById("SideNav").style.width = "100%";
-		}
-		function closeNav() {
-			document.getElementById("SideNav").style.width = "0";
-		}
-	</script>
-	
-	<!-- Initialize Swiper -->
-	<script>
-		var swiper = new Swiper("#s_pic", {
-			speed:1000,
-			spaceBetween: 500,
-			centeredSlides: true,
-			effect: "fade",
-			autoplay: {
-		  		delay: 3500,
-		  		disableOnInteraction: false,
-			},
-			pagination: {
-		  		el: ".swiper-pagination",
-		  		type: "progressbar",
-		  		clickable: true,
-			},
-	  	});
-	</script>
+<!--breathingGlow.frag-->
+<span onclick="transitionToPage('ABOUT.html')"><canvas id="glslCanvas" data-fragment-url="11_breathingGlow.frag" width="800" height="600" data-textures="data/moon.jpg, data/Taipei101_1.jpg"></canvas></span>
 </body>
 
+	
 <!--glslCanvas-->
 <script>
     var canvas = document.getElementById("glslCanvas");
@@ -221,5 +37,5 @@
     var sandbox_thumbnail = "";
     canvas.style.width = '100%';
     canvas.style.height = '100%';
-</script>
+</script>	
 </html>

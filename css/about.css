@@ -1,0 +1,180 @@
+@charset "utf-8";
+@import url("rwd.css");/* CSS Document */
+
+@font-face {
+  font-family: typewriter;
+  src: url(Typewriter.ttf);
+}
+
+@font-face {
+  font-family: story;
+  src: url(SourceHanSerif-Regular.ttc);
+}
+
+@font-face {
+  font-family: chinese;
+  src: url(隸書繁.ttf);
+}
+
+::-moz-selection{ /*Firefox*/
+	color: #111;
+	background: #fff;
+}
+
+::selection{
+	color: #111;
+	background: #fff;
+}
+
+/****************************************************/
+
+*{
+	margin:0;
+	padding:0;
+}
+
+body{
+	font-family: typewriter, chinese;
+	color: #fff;
+	background:#101515;
+}
+
+/* header */
+header{
+	position:relative;
+	padding:5px 0px;
+	color:#fff;
+	background:#101515;
+	text-align:center;
+}
+
+.Logo a{
+	display: block;
+	color: #fff;
+	font-size: 30px;
+	transition: 0.3s;
+	text-decoration: none;
+}
+
+.Logo a:hover{
+	color: #777;
+}
+
+/*掛接的icon可以用font-size來設置大小*/
+.ficon{
+	font-size:50px;
+	padding:5px;
+}
+
+.menu{
+	position:absolute;
+	right:20px;
+	top:20px;
+	width:30px;
+	height:30px;
+	font-size:30px;
+	display:block;
+	transition: 0.3s;
+}
+
+.menu:hover{
+	cursor:pointer;
+	color: #777;
+}
+
+
+/* nav bar */
+nav{
+	width:100%;
+	margin:auto;
+	text-align:center;
+	font-size:18px;
+	
+	position: -webkit-sticky; /*Safari，有前綴詞是因為要特別給某一種瀏覽器使用*/
+	position: sticky; /*表頭*/
+	top: 0; /*滑到他的時候會頂在最上面*/
+	z-index:2000;
+}
+
+nav li{
+	display: block;
+	border-bottom:solid rgba(242, 242, 242, 1) 1px;
+}
+
+nav li span{
+	display: inline-block;
+	width:100%;
+	padding:20px 30px;
+	color: rgba(255, 255, 255, 1);
+	text-decoration: none;
+	transition: 0.3s;
+}
+
+nav li span:hover{
+	color:rgba(207, 181, 59, 1);
+	cursor: pointer;
+}
+
+.ch_bg{
+	background:rgba(207, 181, 59, 1);
+}
+
+/* section */
+section{
+	width:80%;
+	margin: auto;
+	padding:30px 0px;
+	text-align:center;
+	line-height:2.1em;
+	font-size:.85em;
+	
+	/*fade to another page*/
+	opacity: 0;
+   	transition: opacity 1s;
+	font-family: 'Zen Kurenaido', sans-serif;
+}
+
+section img{
+	width:100%;
+	border-radius:20%;	
+}
+
+
+/*footer*/
+footer{
+	padding:20px 0px;
+	text-align:center;	
+}
+
+/*===============rwd details===============*/
+
+/* For tablets */
+@media only screen and (min-width: 768px) { 	
+	.Logo a{
+		margin:50px;
+		font-size: 35px 
+	}
+	
+	nav{
+		position: -webkit-sticky;
+		position: sticky;
+		top: 0;
+		z-index:2000;
+	}
+
+	nav li{
+		display: inline-block;
+		border-bottom:solid rgba(242, 242, 242, 1) 0px;
+	}
+	.menu{
+		display:none;    
+	}
+}
+
+/* For desktop */
+@media only screen and (min-width: 1200px) {
+	section{
+		line-height:2.5em;
+		font-size:1.1em;
+	}
+}
