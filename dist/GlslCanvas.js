@@ -888,7 +888,8 @@ function parseUniforms(uniforms) {
 }
 
 function isCanvasVisible(canvas) {
-    return canvas.getBoundingClientRect().top + canvas.height > 0 && canvas.getBoundingClientRect().top < (window.innerHeight || document.documentElement.clientHeight);
+    var bound = canvas.getBoundingClientRect();
+    return bound.top + bound.height > 0 && bound.top < (window.innerHeight || document.documentElement.clientHeight);
 }
 
 function isPowerOf2(value) {
@@ -1050,6 +1051,8 @@ function subscribeMixin$1(target) {
 }
 
 // Texture management
+// GL texture wrapper object for keeping track of a global set of textures, keyed by a unique user-defined name
+
 var Texture = function () {
     function Texture(gl, name) {
         var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -1227,6 +1230,8 @@ var Texture = function () {
                 this.sourceType = 'element';
 
                 if (element instanceof HTMLVideoElement) {
+                    this.width = this.source.videoWidth;
+                    this.height = this.source.videoHeight;
                     element.addEventListener('canplaythrough', function () {
                         _this2.intervalID = setInterval(function () {
                             _this2.update(options);
@@ -1344,9 +1349,6 @@ var Texture = function () {
     return Texture;
 }();
 
-// Report max texture size for a GL context
-
-
 Texture.getMaxTextureSize = function (gl) {
     return gl.getParameter(gl.MAX_TEXTURE_SIZE);
 };
@@ -1425,8 +1427,15 @@ var GlslCanvas = function () {
             options.glslVersion = options.glslVersion || (options.webglVersion === 2 ? 300 : 100);
         }
 
-        this.width = canvas.clientWidth;
-        this.height = canvas.clientHeight;
+        if (canvas.hasAttribute('data-fullscreen') && (canvas.getAttribute('data-fullscreen') == "1" || canvas.getAttribute('data-fullscreen') == "true")) {
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        } else {
+            this.width = canvas.clientWidth;
+            this.height = canvas.clientHeight;
+        }
 
         this.webglVersion = options.webglVersion === 2 ? 2 : 1;
         this.glslVersion = options.glslVersion === 300 ? 300 : 100;
@@ -1438,6 +1447,7 @@ var GlslCanvas = function () {
         this.uniforms = {};
         this.vbo = {};
         this.isValid = false;
+        this.animationFrameRequest = undefined;
 
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
@@ -1532,7 +1542,7 @@ var GlslCanvas = function () {
             }
 
             sandbox.render();
-            window.requestAnimationFrame(RenderLoop);
+            sandbox.animationFrameRequest = window.requestAnimationFrame(RenderLoop);
         }
 
         // Start
@@ -1544,6 +1554,9 @@ var GlslCanvas = function () {
     createClass(GlslCanvas, [{
         key: 'destroy',
         value: function destroy() {
+            // Stop the animation
+            cancelAnimationFrame(this.animationFrameRequest);
+
             this.animated = false;
             this.isValid = false;
             for (var tex in this.textures) {
@@ -1561,6 +1574,7 @@ var GlslCanvas = function () {
                 var buffer = this.buffers[key];
                 this.gl.deleteProgram(buffer.program);
             }
+
             this.program = null;
             this.gl = null;
         }

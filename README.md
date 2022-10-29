@@ -39,7 +39,7 @@ As you can see, in this example we are loading the fragment shader by setting th
 * ```data-webgl``` : WebGL version (by default ```1```)
 * ```data-glsl``` : GLSL ES version (by default ```100``` for WebGL and ```300``` for WebGL2)
 
-All the catched ```.glslCanvas``` element whill be stored in the ```windows.glslCanvases``` array.
+All the cached ```.glslCanvas``` elements will be stored in the ```windows.glslCanvases``` array.
 
 ### The JS way
 
@@ -50,11 +50,11 @@ var canvas = document.createElement("canvas");
 var sandbox = new GlslCanvas(canvas);
 ```
 
-In the case you need to reload the
+In case you need to reload the shader:
 
 ### Reloading shaders from JS
 
-You can change the content of the shader as many times you want. Here are some examples:
+You can change the content of the shader as many times as you want. Here are some examples:
 
 ```javascript
 // Load only the Fragment Shader
