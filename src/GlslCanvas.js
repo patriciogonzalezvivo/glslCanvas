@@ -49,6 +49,7 @@ export default class GlslCanvas {
 
         this.canvas = canvas;
         this.gl = undefined;
+        this.deps = {};
         this.program = undefined;
         this.textures = {};
         this.buffers = {};
@@ -227,9 +228,12 @@ void main(){
         lines.forEach( (line, i) => {
             let line_trim = line.trim();
             if (line_trim.startsWith('#include \"lygia') ) {
-                let include_url = line_trim.substring(15);
-                include_url = "https://lygia.xyz" + include_url.replace(/\'|\"|\;|\s/g,'');
-                this.fragmentString += getFile(include_url) + '\n';
+                let dep = line_trim.substring(15).replace(/\'|\"|\;|\s/g,'');
+                if (this.deps[dep] === undefined ) {
+                    let url = "https://lygia.xyz" + dep;
+                    this.deps[dep] = getFile(url);
+                }
+                this.fragmentString +=  this.deps[dep] + '\n';
             }
             else {
                 this.fragmentString += line + '\n';

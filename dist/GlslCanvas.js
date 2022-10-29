@@ -1352,6 +1352,7 @@ var GlslCanvas = function () {
 
         this.canvas = canvas;
         this.gl = undefined;
+        this.deps = {};
         this.program = undefined;
         this.textures = {};
         this.buffers = {};
@@ -1508,9 +1509,12 @@ var GlslCanvas = function () {
             lines.forEach(function (line, i) {
                 var line_trim = line.trim();
                 if (line_trim.startsWith('#include \"lygia')) {
-                    var include_url = line_trim.substring(15);
-                    include_url = "https://lygia.xyz" + include_url.replace(/\'|\"|\;|\s/g, '');
-                    _this2.fragmentString += getFile(include_url) + '\n';
+                    var dep = line_trim.substring(15).replace(/\'|\"|\;|\s/g, '');
+                    if (_this2.deps[dep] === undefined) {
+                        var url = "https://lygia.xyz" + dep;
+                        _this2.deps[dep] = getFile(url);
+                    }
+                    _this2.fragmentString += _this2.deps[dep] + '\n';
                 } else {
                     _this2.fragmentString += line + '\n';
                 }
