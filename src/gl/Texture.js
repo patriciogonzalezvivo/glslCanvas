@@ -164,6 +164,8 @@ export default class Texture {
             this.sourceType = 'element';
 
             if (element instanceof HTMLVideoElement) {
+                this.width = this.source.videoWidth;
+                this.height = this.source.videoHeight;
                 element.addEventListener('canplaythrough', () => {
                     this.intervalID = setInterval(()=>{
                         this.update(options);
