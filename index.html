@@ -5,7 +5,6 @@
         <title>GlslCanvas</title>
 
         <script type="text/javascript" src="dist/GlslCanvas.js"></script>
-        <script type="text/javascript" src="https://cdn.rawgit.com/github/fetch/master/fetch.js"></script>
 
         <style>
             body {
@@ -20,7 +19,6 @@
             }​
 
             .blank {
-
             }
 
             #credits {
@@ -56,7 +54,7 @@
 
     </head>
     <body>
-        <canvas id="glslCanvas" data-fragment="
+        <canvas id="glslCanvas" data-fragment='
 // Author: Patricio Gonzalez Vivo
 #ifdef GL_ES
 precision mediump float;
@@ -73,19 +71,9 @@ uniform vec2 u_tex0Resolution;
 uniform sampler2D u_logo; // data/logo.jpg
 uniform vec2 u_logoResolution;
 
-vec2 scale(vec2 st, float s) {
-    return (st-.5)*s+.5;
-}
-
-vec2 ratio(in vec2 st, in vec2 s) {
-    return mix( vec2((st.x*s.x/s.y)-(s.x*.5-s.y*.5)/s.y,st.y),
-                vec2(st.x,st.y*(s.y/s.x)-(s.y*.5-s.x*.5)/s.x),
-                step(s.x,s.y));
-}
-
-float circleSDF(vec2 st) {
-    return length(st - 0.5) * 2.0;
-}
+#include "lygia/space/ratio.glsl"
+#include "lygia/space/scale.glsl"
+#include "lygia/sdf/circleSDF.glsl"
 
 vec2 sphereCoords(vec2 _st, float _scale){
     float maxFactor = sin(1.570796327);
@@ -145,7 +133,7 @@ void main(){
 
     gl_FragColor = vec4(color, 1.0);
 }
-" width="800" height="600" data-textures="data/moon.jpg"></canvas>
+' width="800" height="600" data-textures="data/moon.jpg"></canvas>
 
         <div id="credits">
             <p class="label" id="title"></p>

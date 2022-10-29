@@ -43,6 +43,16 @@ export function isDiff(a, b) {
     return false;
 }
 
+export function getFile(url) {
+    let httpRequest = new XMLHttpRequest();
+    httpRequest.open("GET", url, false);
+    httpRequest.send();
+    if (httpRequest.status == 200)
+        return httpRequest.responseText;
+    else
+        return "";
+}
+
 export function subscribeMixin (target) {
     var listeners = new Set();
 

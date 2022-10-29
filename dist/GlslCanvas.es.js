@@ -509,6 +509,13 @@ function isDiff(a, b) {
     return false;
 }
 
+function getFile(url) {
+    var httpRequest = new XMLHttpRequest();
+    httpRequest.open("GET", url, false);
+    httpRequest.send();
+    if (httpRequest.status == 200) return httpRequest.responseText;else return "";
+}
+
 function subscribeMixin$1(target) {
     var listeners = new Set();
 
@@ -750,6 +757,12 @@ var Texture = function () {
                 if (isVideo) {
                     element = document.createElement('video');
                     element.autoplay = true;
+
+                    element.muted = true; /* required for modern browsers to autoplay video */
+                    setTimeout(function () {
+                        element.play(); /* doesn't block promise but needs a more elegant solution */
+                    }, 1);
+
                     options.filtering = 'nearest';
                     // element.preload = 'auto';
                     // element.style.display = 'none';
@@ -1135,6 +1148,7 @@ var GlslCanvas = function () {
     }, {
         key: 'load',
         value: function load(fragString, vertString) {
+            var _this2 = this;
 
             // Load vertex shader if there is one
             if (vertString) {
@@ -1146,6 +1160,20 @@ var GlslCanvas = function () {
                 this.fragmentString = fragString;
             }
 
+            var lines = this.fragmentString.split(/\r?\n/);
+            this.fragmentString = "#define PLATFORM_WEBGL\n";
+
+            lines.forEach(function (line, i) {
+                var line_trim = line.trim();
+                if (line_trim.startsWith('#include \"lygia')) {
+                    var include_url = line_trim.substring(15);
+                    include_url = "https://lygia.xyz" + include_url.replace(/\'|\"|\;|\s/g, '');
+                    _this2.fragmentString += getFile(include_url) + '\n';
+                } else {
+                    _this2.fragmentString += line + '\n';
+                }
+            });
+
             this.animated = false;
             this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
             this.nTime = (this.fragmentString.match(/u_time/g) || []).length;
@@ -1155,16 +1183,16 @@ var GlslCanvas = function () {
 
             var nTextures = this.fragmentString.search(/sampler2D/g);
             if (nTextures) {
-                var lines = this.fragmentString.split('\n');
-                for (var i = 0; i < lines.length; i++) {
-                    var match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
+                var _lines = this.fragmentString.split('\n');
+                for (var i = 0; i < _lines.length; i++) {
+                    var match = _lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
                     if (match) {
                         var ext = match[2].split('.').pop().toLowerCase();
                         if (match[1] && match[2] && (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'ogv' || ext === 'webm' || ext === 'mp4')) {
                             this.setUniform(match[1], match[2]);
                         }
                     }
-                    var main = lines[i].match(/\s*void\s*main\s*/g);
+                    var main = _lines[i].match(/\s*void\s*main\s*/g);
                     if (main) {
                         break;
                     }
@@ -1266,7 +1294,7 @@ var GlslCanvas = function () {
     }, {
         key: 'loadTexture',
         value: function loadTexture(name, urlElementOrData, options) {
-            var _this2 = this;
+            var _this3 = this;
 
             if (!options) {
                 options = {};
@@ -1286,13 +1314,13 @@ var GlslCanvas = function () {
                 if (this.textures[name]) {
                     this.textures[name].load(options);
                     this.textures[name].on('loaded', function (args) {
-                        _this2.forceRender = true;
+                        _this3.forceRender = true;
                     });
                 }
             } else {
                 this.textures[name] = new Texture(this.gl, name, options);
                 this.textures[name].on('loaded', function (args) {
-                    _this2.forceRender = true;
+                    _this3.forceRender = true;
                 });
             }
         }

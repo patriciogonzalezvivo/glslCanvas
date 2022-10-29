@@ -1,6 +1,6 @@
 {
     "name": "glslCanvas",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "description": "Simple GLSL Fragment Shader Sandbox",
     "main": "dist/GlslCanvas.js",
     "module": "dist/GlslCanvas.es.js",
@@ -33,20 +33,20 @@
     "homepage": "https://github.com/patriciogonzalezvivo/glslCanvas#readme",
     "devDependencies": {
         "babel": "6.23.0",
-        "babel-core": "^6.26.0",
+        "babel-core": "^6.26.3",
         "babel-env": "^2.4.1",
         "babel-plugin-external-helpers": "^6.22.0",
         "babelify": "^8.0.0",
-        "rollup": "^0.50.0",
-        "rollup-plugin-babel": "^3.0.2",
-        "rollup-plugin-commonjs": "^8.2.6",
-        "rollup-plugin-node-resolve": "^3.0.0",
-        "rollup-plugin-sizes": "^0.4.0",
+        "rollup": "^0.50.1",
+        "rollup-plugin-babel": "^3.0.7",
+        "rollup-plugin-commonjs": "^8.4.1",
+        "rollup-plugin-node-resolve": "^3.4.0",
+        "rollup-plugin-sizes": "^0.4.2",
         "rollup-plugin-uglify": "^2.0.1",
-        "uglify-es": "^3.1.6"
+        "uglify-es": "^3.3.9"
     },
     "dependencies": {
-        "xhr": "^2.5.0"
+        "xhr": "^2.6.0"
     },
     "browserify-shim": {}
 }

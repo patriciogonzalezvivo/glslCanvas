@@ -6,14 +6,6 @@
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
-
-
-
-
-function createCommonjsModule(fn, module) {
-	return module = { exports: {} }, fn(module, module.exports), module.exports;
-}
-
 var win;
 
 if (typeof window !== "undefined") {
@@ -33,6 +25,9 @@ var isFunction_1 = isFunction;
 var toString = Object.prototype.toString;
 
 function isFunction (fn) {
+  if (!fn) {
+    return false
+  }
   var string = toString.call(fn);
   return string === '[object Function]' ||
     (typeof fn === 'function' && string !== '[object RegExp]') ||
@@ -44,67 +39,9 @@ function isFunction (fn) {
       fn === window.prompt))
 }
 
-var trim_1 = createCommonjsModule(function (module, exports) {
-exports = module.exports = trim;
-
-function trim(str){
-  return str.replace(/^\s*|\s*$/g, '');
-}
-
-exports.left = function(str){
-  return str.replace(/^\s*/, '');
+var trim = function(string) {
+  return string.replace(/^\s+|\s+$/g, '');
 };
-
-exports.right = function(str){
-  return str.replace(/\s*$/, '');
-};
-});
-
-var forEach_1 = forEach;
-
-var toString$1 = Object.prototype.toString;
-var hasOwnProperty = Object.prototype.hasOwnProperty;
-
-function forEach(list, iterator, context) {
-    if (!isFunction_1(iterator)) {
-        throw new TypeError('iterator must be a function')
-    }
-
-    if (arguments.length < 3) {
-        context = this;
-    }
-    
-    if (toString$1.call(list) === '[object Array]')
-        forEachArray$1(list, iterator, context);
-    else if (typeof list === 'string')
-        forEachString(list, iterator, context);
-    else
-        forEachObject(list, iterator, context);
-}
-
-function forEachArray$1(array, iterator, context) {
-    for (var i = 0, len = array.length; i < len; i++) {
-        if (hasOwnProperty.call(array, i)) {
-            iterator.call(context, array[i], i, array);
-        }
-    }
-}
-
-function forEachString(string, iterator, context) {
-    for (var i = 0, len = string.length; i < len; i++) {
-        // no such thing as a sparse string.
-        iterator.call(context, string.charAt(i), i, string);
-    }
-}
-
-function forEachObject(object, iterator, context) {
-    for (var k in object) {
-        if (hasOwnProperty.call(object, k)) {
-            iterator.call(context, object[k], k, object);
-        }
-    }
-}
-
 var isArray = function(arg) {
       return Object.prototype.toString.call(arg) === '[object Array]';
     };
@@ -115,29 +52,29 @@ var parseHeaders = function (headers) {
 
   var result = {};
 
-  forEach_1(
-      trim_1(headers).split('\n')
-    , function (row) {
-        var index = row.indexOf(':')
-          , key = trim_1(row.slice(0, index)).toLowerCase()
-          , value = trim_1(row.slice(index + 1));
+  var headersArr = trim(headers).split('\n');
 
-        if (typeof(result[key]) === 'undefined') {
-          result[key] = value;
-        } else if (isArray(result[key])) {
-          result[key].push(value);
-        } else {
-          result[key] = [ result[key], value ];
-        }
-      }
-  );
+  for (var i = 0; i < headersArr.length; i++) {
+    var row = headersArr[i];
+    var index = row.indexOf(':')
+    , key = trim(row.slice(0, index)).toLowerCase()
+    , value = trim(row.slice(index + 1));
+
+    if (typeof(result[key]) === 'undefined') {
+      result[key] = value;
+    } else if (isArray(result[key])) {
+      result[key].push(value);
+    } else {
+      result[key] = [ result[key], value ];
+    }
+  }
 
   return result
 };
 
 var immutable = extend;
 
-var hasOwnProperty$1 = Object.prototype.hasOwnProperty;
+var hasOwnProperty = Object.prototype.hasOwnProperty;
 
 function extend() {
     var target = {};
@@ -146,7 +83,7 @@ function extend() {
         var source = arguments[i];
 
         for (var key in source) {
-            if (hasOwnProperty$1.call(source, key)) {
+            if (hasOwnProperty.call(source, key)) {
                 target[key] = source[key];
             }
         }
@@ -914,6 +851,13 @@ function isDiff(a, b) {
     return false;
 }
 
+function getFile(url) {
+    var httpRequest = new XMLHttpRequest();
+    httpRequest.open("GET", url, false);
+    httpRequest.send();
+    if (httpRequest.status == 200) return httpRequest.responseText;else return "";
+}
+
 function subscribeMixin$1(target) {
     var listeners = new Set();
 
@@ -1155,6 +1099,12 @@ var Texture = function () {
                 if (isVideo) {
                     element = document.createElement('video');
                     element.autoplay = true;
+
+                    element.muted = true; /* required for modern browsers to autoplay video */
+                    setTimeout(function () {
+                        element.play(); /* doesn't block promise but needs a more elegant solution */
+                    }, 1);
+
                     options.filtering = 'nearest';
                     // element.preload = 'auto';
                     // element.style.display = 'none';
@@ -1540,6 +1490,7 @@ var GlslCanvas = function () {
     }, {
         key: 'load',
         value: function load(fragString, vertString) {
+            var _this2 = this;
 
             // Load vertex shader if there is one
             if (vertString) {
@@ -1551,6 +1502,20 @@ var GlslCanvas = function () {
                 this.fragmentString = fragString;
             }
 
+            var lines = this.fragmentString.split(/\r?\n/);
+            this.fragmentString = "#define PLATFORM_WEBGL\n";
+
+            lines.forEach(function (line, i) {
+                var line_trim = line.trim();
+                if (line_trim.startsWith('#include \"lygia')) {
+                    var include_url = line_trim.substring(15);
+                    include_url = "https://lygia.xyz" + include_url.replace(/\'|\"|\;|\s/g, '');
+                    _this2.fragmentString += getFile(include_url) + '\n';
+                } else {
+                    _this2.fragmentString += line + '\n';
+                }
+            });
+
             this.animated = false;
             this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
             this.nTime = (this.fragmentString.match(/u_time/g) || []).length;
@@ -1560,16 +1525,16 @@ var GlslCanvas = function () {
 
             var nTextures = this.fragmentString.search(/sampler2D/g);
             if (nTextures) {
-                var lines = this.fragmentString.split('\n');
-                for (var i = 0; i < lines.length; i++) {
-                    var match = lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
+                var _lines = this.fragmentString.split('\n');
+                for (var i = 0; i < _lines.length; i++) {
+                    var match = _lines[i].match(/uniform\s*sampler2D\s*([\w]*);\s*\/\/\s*([\w|\:\/\/|\.|\-|\_]*)/i);
                     if (match) {
                         var ext = match[2].split('.').pop().toLowerCase();
                         if (match[1] && match[2] && (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'ogv' || ext === 'webm' || ext === 'mp4')) {
                             this.setUniform(match[1], match[2]);
                         }
                     }
-                    var main = lines[i].match(/\s*void\s*main\s*/g);
+                    var main = _lines[i].match(/\s*void\s*main\s*/g);
                     if (main) {
                         break;
                     }
@@ -1671,7 +1636,7 @@ var GlslCanvas = function () {
     }, {
         key: 'loadTexture',
         value: function loadTexture(name, urlElementOrData, options) {
-            var _this2 = this;
+            var _this3 = this;
 
             if (!options) {
                 options = {};
@@ -1691,13 +1656,13 @@ var GlslCanvas = function () {
                 if (this.textures[name]) {
                     this.textures[name].load(options);
                     this.textures[name].on('loaded', function (args) {
-                        _this2.forceRender = true;
+                        _this3.forceRender = true;
                     });
                 }
             } else {
                 this.textures[name] = new Texture(this.gl, name, options);
                 this.textures[name].on('loaded', function (args) {
-                    _this2.forceRender = true;
+                    _this3.forceRender = true;
                 });
             }
         }

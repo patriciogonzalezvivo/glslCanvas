@@ -24,7 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import xhr from 'xhr';
 import { createProgram, createShader, parseUniforms, setupWebGL } from './gl/gl';
 import Texture from './gl/Texture';
-import { isCanvasVisible, isDiff } from './tools/common';
+import { isCanvasVisible, isDiff, getFile } from './tools/common';
 import { subscribeMixin } from './tools/mixin';
 
 export default class GlslCanvas {
@@ -221,6 +221,21 @@ void main(){
             this.fragmentString = fragString;
         }
 
+        let lines = this.fragmentString.split(/\r?\n/);
+        this.fragmentString = "#define PLATFORM_WEBGL\n";
+
+        lines.forEach( (line, i) => {
+            let line_trim = line.trim();
+            if (line_trim.startsWith('#include \"lygia') ) {
+                let include_url = line_trim.substring(15);
+                include_url = "https://lygia.xyz" + include_url.replace(/\'|\"|\;|\s/g,'');
+                this.fragmentString += getFile(include_url) + '\n';
+            }
+            else {
+                this.fragmentString += line + '\n';
+            }
+        });
+        
         this.animated = false;
         this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
         this.nTime = (this.fragmentString.match(/u_time/g) || []).length;
