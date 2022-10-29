@@ -89,6 +89,13 @@ export default class Texture {
             if (isVideo) {
                 element = document.createElement('video');
                 element.autoplay = true;
+                
+                
+                element.muted = true; /* required for modern browsers to autoplay video */
+                setTimeout(function () {
+                    element.play() /* doesn't block promise but needs a more elegant solution */
+                }, 1);
+                
                 options.filtering = 'nearest';
                 // element.preload = 'auto';
                 // element.style.display = 'none';
@@ -157,6 +164,8 @@ export default class Texture {
             this.sourceType = 'element';
 
             if (element instanceof HTMLVideoElement) {
+                this.width = this.source.videoWidth;
+                this.height = this.source.videoHeight;
                 element.addEventListener('canplaythrough', () => {
                     this.intervalID = setInterval(()=>{
                         this.update(options);
