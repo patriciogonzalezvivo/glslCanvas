@@ -223,7 +223,7 @@ void main(){
         }
 
         let lines = this.fragmentString.split(/\r?\n/);
-        this.fragmentString = "#define PLATFORM_WEBGL\n";
+        this.fragmentString = "#define PLATFORM_WEBGL\n#line 0\n";
 
         lines.forEach( (line, i) => {
             let line_trim = line.trim();
@@ -234,7 +234,7 @@ void main(){
                         var url = "https://lygia.xyz" + dep;
                         this.deps[dep] = getFile(url);
                     }
-                    this.fragmentString += this.deps[dep] + '\n#line ' + i + '\n';
+                    this.fragmentString += this.deps[dep] + '\n#line ' + (i + 2) + '\n';
                 }
             }
             else
