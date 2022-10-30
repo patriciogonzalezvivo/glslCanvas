@@ -1173,12 +1173,12 @@ var GlslCanvas = function () {
                             var url = "https://lygia.xyz" + dep;
                             _this2.deps[dep] = getFile(url);
                         }
-                        _this2.fragmentString += _this2.deps[dep] + '\n';
+                        _this2.fragmentString += _this2.deps[dep] + '\n#line ' + i + '\n';
                     }
-                } else {
-                    _this2.fragmentString += line + '\n';
-                }
+                } else _this2.fragmentString += line + '\n';
             });
+
+            // console.log(this.fragmentString);
 
             this.animated = false;
             this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;

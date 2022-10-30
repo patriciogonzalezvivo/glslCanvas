@@ -60,17 +60,15 @@
 precision mediump float;
 #endif
 
-#define PI 3.1415926535
-#define HALF_PI 1.57079632679
+uniform vec2        u_resolution;
+uniform float       u_time;
+uniform sampler2D   u_tex0;
+uniform vec2        u_tex0Resolution; 
 
-uniform vec2 u_resolution;
-uniform float u_time;
-uniform sampler2D u_tex0;
-uniform vec2 u_tex0Resolution; 
+uniform sampler2D   u_logo; // data/logo.jpg
+uniform vec2        u_logoResolution;
 
-uniform sampler2D u_logo; // data/logo.jpg
-uniform vec2 u_logoResolution;
-
+#include "lygia/math/const.glsl"
 #include "lygia/space/ratio.glsl"
 #include "lygia/space/scale.glsl"
 #include "lygia/sdf/circleSDF.glsl"

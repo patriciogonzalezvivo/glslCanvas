@@ -234,13 +234,14 @@ void main(){
                         var url = "https://lygia.xyz" + dep;
                         this.deps[dep] = getFile(url);
                     }
-                    this.fragmentString += this.deps[dep] + '\n';
+                    this.fragmentString += this.deps[dep] + '\n#line ' + i + '\n';
                 }
             }
-            else {
+            else
                 this.fragmentString += line + '\n';
-            }
         });
+
+        // console.log(this.fragmentString);
 
         this.animated = false;
         this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
