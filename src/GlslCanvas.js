@@ -229,17 +229,19 @@ void main(){
             let line_trim = line.trim();
             if (line_trim.startsWith('#include \"lygia') ) {
                 let dep = line_trim.substring(15).replace(/\'|\"|\;|\s/g,'');
-                if (this.deps[dep] === undefined ) {
-                    let url = "https://lygia.xyz" + dep;
-                    this.deps[dep] = getFile(url);
+                if (dep.endsWith('glsl')) {
+                    if (this.deps[dep] === undefined) {
+                        var url = "https://lygia.xyz" + dep;
+                        this.deps[dep] = getFile(url);
+                    }
+                    this.fragmentString += this.deps[dep] + '\n';
                 }
-                this.fragmentString +=  this.deps[dep] + '\n';
             }
             else {
                 this.fragmentString += line + '\n';
             }
         });
-        
+
         this.animated = false;
         this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
         this.nTime = (this.fragmentString.match(/u_time/g) || []).length;

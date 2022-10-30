@@ -1510,11 +1510,13 @@ var GlslCanvas = function () {
                 var line_trim = line.trim();
                 if (line_trim.startsWith('#include \"lygia')) {
                     var dep = line_trim.substring(15).replace(/\'|\"|\;|\s/g, '');
-                    if (_this2.deps[dep] === undefined) {
-                        var url = "https://lygia.xyz" + dep;
-                        _this2.deps[dep] = getFile(url);
+                    if (dep.endsWith('glsl')) {
+                        if (_this2.deps[dep] === undefined) {
+                            var url = "https://lygia.xyz" + dep;
+                            _this2.deps[dep] = getFile(url);
+                        }
+                        _this2.fragmentString += _this2.deps[dep] + '\n';
                     }
-                    _this2.fragmentString += _this2.deps[dep] + '\n';
                 } else {
                     _this2.fragmentString += line + '\n';
                 }
