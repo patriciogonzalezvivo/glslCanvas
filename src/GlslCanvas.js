@@ -234,7 +234,7 @@ void main(){
                         var url = "https://lygia.xyz" + dep;
                         this.deps[dep] = getFile(url);
                     }
-                    this.fragmentString += this.deps[dep] + '\n#line ' + (i + 2) + '\n';
+                    this.fragmentString += this.deps[dep] + '\n#line ' + i + '\n';
                 }
             }
             else
