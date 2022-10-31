@@ -1509,14 +1509,18 @@ var GlslCanvas = function () {
 
             lines.forEach(function (line, i) {
                 var line_trim = line.trim();
-                if (line_trim.startsWith('#include \"lygia')) {
-                    var dep = line_trim.substring(15).replace(/\'|\"|\;|\s/g, '');
-                    if (dep.endsWith('glsl')) {
-                        if (_this2.deps[dep] === undefined) {
-                            var url = "https://lygia.xyz" + dep;
-                            _this2.deps[dep] = getFile(url);
+                if (line_trim.startsWith('#include')) {
+
+                    // Make sure the include is for LYGIA before doing calls
+                    if (line_trim.startsWith('#include \"lygia')) {
+                        var dep = line_trim.substring(15).replace(/\'|\"|\;|\s/g, '');
+                        if (dep.endsWith('glsl')) {
+                            if (_this2.deps[dep] === undefined) {
+                                var url = "https://lygia.xyz" + dep;
+                                _this2.deps[dep] = getFile(url);
+                            }
+                            _this2.fragmentString += _this2.deps[dep] + '\n#line ' + (i + 1) + '\n';
                         }
-                        _this2.fragmentString += _this2.deps[dep] + '\n#line ' + (i + 1) + '\n';
                     }
                 } else _this2.fragmentString += line + '\n';
             });

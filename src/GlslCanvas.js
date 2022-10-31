@@ -227,15 +227,20 @@ void main(){
 
         lines.forEach( (line, i) => {
             let line_trim = line.trim();
-            if (line_trim.startsWith('#include \"lygia') ) {
-                let dep = line_trim.substring(15).replace(/\'|\"|\;|\s/g,'');
-                if (dep.endsWith('glsl')) {
-                    if (this.deps[dep] === undefined) {
-                        var url = "https://lygia.xyz" + dep;
-                        this.deps[dep] = getFile(url);
+            if (line_trim.startsWith('#include')) {
+
+                // Make sure the include is for LYGIA before doing calls
+                if ( line_trim.startsWith('#include \"lygia') ) {
+                    let dep = line_trim.substring(15).replace(/\'|\"|\;|\s/g,'');
+                    if (dep.endsWith('glsl')) {
+                        if (this.deps[dep] === undefined) {
+                            var url = "https://lygia.xyz" + dep;
+                            this.deps[dep] = getFile(url);
+                        }
+                        this.fragmentString += this.deps[dep] + '\n#line ' + (i+1) + '\n';
                     }
-                    this.fragmentString += this.deps[dep] + '\n#line ' + (i+1) + '\n';
                 }
+
             }
             else
                 this.fragmentString += line + '\n';
