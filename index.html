@@ -16,10 +16,9 @@
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%,-50%);
-            }​
+            }
 
             .blank {
-
             }
 
             #credits {
@@ -55,7 +54,7 @@
 
     </head>
     <body>
-        <canvas id="glslCanvas" data-fragment="#version 300 es
+        <canvas id="glslCanvas" data-fragment='#version 300 es
 // Author: Patricio Gonzalez Vivo
 #ifdef GL_ES
 precision mediump float;
@@ -64,29 +63,20 @@ precision mediump float;
 #define PI 3.1415926535
 #define HALF_PI 1.57079632679
 
-uniform vec2 u_resolution;
-uniform float u_time;
-uniform sampler2D u_tex0;
-uniform vec2 u_tex0Resolution;
+uniform vec2        u_resolution;
+uniform float       u_time;
+uniform sampler2D   u_tex0;
+uniform vec2        u_tex0Resolution; 
 
 out vec4 frag_color;
 
-uniform sampler2D u_logo; // data/logo.jpg
-uniform vec2 u_logoResolution;
+uniform sampler2D   u_logo; // data/logo.jpg
+uniform vec2        u_logoResolution;
 
-vec2 scale(vec2 st, float s) {
-    return (st-.5)*s+.5;
-}
-
-vec2 ratio(in vec2 st, in vec2 s) {
-    return mix( vec2((st.x*s.x/s.y)-(s.x*.5-s.y*.5)/s.y,st.y),
-                vec2(st.x,st.y*(s.y/s.x)-(s.y*.5-s.x*.5)/s.x),
-                step(s.x,s.y));
-}
-
-float circleSDF(vec2 st) {
-    return length(st - 0.5) * 2.0;
-}
+#include "lygia/math/const.glsl"
+#include "lygia/space/ratio.glsl"
+#include "lygia/space/scale.glsl"
+#include "lygia/sdf/circleSDF.glsl"
 
 vec2 sphereCoords(vec2 _st, float _scale){
     float maxFactor = sin(1.570796327);
@@ -146,7 +136,7 @@ void main(){
 
     frag_color = vec4(color, 1.0);
 }
-" width="800" height="600" data-textures="data/moon.jpg" data-webgl="2"></canvas>
+' width="800" height="600" data-textures="data/moon.jpg" data-webgl="2"></canvas>
 
         <div id="credits">
             <p class="label" id="title"></p>

@@ -25,7 +25,7 @@ import xhr from 'xhr';
 import { createProgram, createShader, parseUniforms, setupWebGL } from './gl/gl';
 import Texture from './gl/Texture';
 import getDefaultShaderStrings from './tools/getDefaultShaderStrings';
-import { isCanvasVisible, isDiff } from './tools/common';
+import { isCanvasVisible, isDiff, getFile } from './tools/common';
 import { subscribeMixin } from './tools/mixin';
 
 export default class GlslCanvas {
@@ -71,6 +71,7 @@ export default class GlslCanvas {
         this.glslVersion = options.glslVersion === 300 ? 300 : 100;
         this.canvas = canvas;
         this.gl = undefined;
+        this.deps = {};
         this.program = undefined;
         this.textures = {};
         this.buffers = {};
@@ -220,6 +221,27 @@ export default class GlslCanvas {
         if (fragString) {
             this.fragmentString = fragString;
         }
+
+        let lines = this.fragmentString.split(/\r?\n/);
+        this.fragmentString = "#define PLATFORM_WEBGL\n#line 0\n";
+
+        lines.forEach( (line, i) => {
+            let line_trim = line.trim();
+            if (line_trim.startsWith('#include \"lygia') ) {
+                let dep = line_trim.substring(15).replace(/\'|\"|\;|\s/g,'');
+                if (dep.endsWith('glsl')) {
+                    if (this.deps[dep] === undefined) {
+                        var url = "https://lygia.xyz" + dep;
+                        this.deps[dep] = getFile(url);
+                    }
+                    this.fragmentString += this.deps[dep] + '\n#line ' + (i+1) + '\n';
+                }
+            }
+            else
+                this.fragmentString += line + '\n';
+        });
+
+        // console.log(this.fragmentString);
 
         this.animated = false;
         this.nDelta = (this.fragmentString.match(/u_delta/g) || []).length;
