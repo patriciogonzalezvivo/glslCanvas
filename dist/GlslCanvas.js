@@ -995,6 +995,8 @@ function subscribeMixin$1(target) {
 }
 
 // Texture management
+// GL texture wrapper object for keeping track of a global set of textures, keyed by a unique user-defined name
+
 var Texture = function () {
     function Texture(gl, name) {
         var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -1248,8 +1250,9 @@ var Texture = function () {
             }
 
             this.powerOf2 = isPowerOf2(this.width) && isPowerOf2(this.height);
-            var defualtFilter = this.powerOf2 ? 'mipmap' : 'linear';
-            this.filtering = options.filtering || defualtFilter;
+            // let defualtFilter = (this.powerOf2 ? 'mipmap' : 'linear');
+            // this.filtering = options.filtering || defualtFilter;
+            this.filtering = options.filtering || 'linear';
 
             var gl = this.gl;
             this.bind();
@@ -1259,8 +1262,8 @@ var Texture = function () {
             // linear: linear blend from original image (no mips)
             // nearest: nearest pixel from original image (no mips, 'blocky' look)
             if (this.powerOf2) {
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, options.TEXTURE_WRAP_S || options.repeat && gl.REPEAT || gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, options.TEXTURE_WRAP_T || options.repeat && gl.REPEAT || gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, options.TEXTURE_WRAP_S || gl.REPEAT);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, options.TEXTURE_WRAP_T || gl.REPEAT);
 
                 if (this.filtering === 'mipmap') {
                     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); // TODO: use trilinear filtering by defualt instead?
@@ -1296,9 +1299,6 @@ var Texture = function () {
     }]);
     return Texture;
 }();
-
-// Report max texture size for a GL context
-
 
 Texture.getMaxTextureSize = function (gl) {
     return gl.getParameter(gl.MAX_TEXTURE_SIZE);

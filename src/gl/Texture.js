@@ -228,8 +228,9 @@ export default class Texture {
         }
 
         this.powerOf2 = isPowerOf2(this.width) && isPowerOf2(this.height);
-        let defualtFilter = (this.powerOf2 ? 'mipmap' : 'linear');
-        this.filtering = options.filtering || defualtFilter;
+        // let defualtFilter = (this.powerOf2 ? 'mipmap' : 'linear');
+        // this.filtering = options.filtering || defualtFilter;
+        this.filtering = options.filtering || 'linear'; 
 
         var gl = this.gl;
         this.bind();
@@ -239,8 +240,8 @@ export default class Texture {
         // linear: linear blend from original image (no mips)
         // nearest: nearest pixel from original image (no mips, 'blocky' look)
         if (this.powerOf2) {
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, options.TEXTURE_WRAP_S || (options.repeat && gl.REPEAT) || gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, options.TEXTURE_WRAP_T || (options.repeat && gl.REPEAT) || gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, options.TEXTURE_WRAP_S || gl.REPEAT );
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, options.TEXTURE_WRAP_T || gl.REPEAT );
 
             if (this.filtering === 'mipmap') {
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); // TODO: use trilinear filtering by defualt instead?
