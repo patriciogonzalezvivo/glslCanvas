@@ -59,7 +59,7 @@ export const ERROR_OTHER = 2;
  *     creation attributes you want to pass in.
  * @return {WebGLRenderingContext} The created context.
  */
-export function setupWebGL (canvas, optAttribs, onError) {
+export function setupWebGL (canvas, optAttribs, options) {
     function showLink(str) {
         let container = canvas.parentNode;
         if (container) {
@@ -68,22 +68,22 @@ export function setupWebGL (canvas, optAttribs, onError) {
     }
 
     function handleError(errorCode, msg) {
-        if (typeof onError === 'function') {
-            onError(errorCode);
+        if (typeof options.onError === 'function') {
+            options.onError(errorCode);
         } else {
             showLink(msg);
         }
     }
 
-    if (!window.WebGLRenderingContext) {
+    if (options.webglVersion === 2 ? !window.WebGL2RenderingContext : !window.WebGLRenderingContext) {
         handleError(ERROR_BROWSER_SUPPORT, GET_A_WEBGL_BROWSER);
         return null;
     }
 
-    let context = create3DContext(canvas, optAttribs);
+    let context = create3DContext(canvas, optAttribs, options.webglVersion);
     if (!context) {
         handleError(ERROR_OTHER, OTHER_PROBLEM);
-    } else {
+    } else if (options.webglVersion === 1) {
         context.getExtension('OES_standard_derivatives');
     }
     return context;
@@ -95,8 +95,8 @@ export function setupWebGL (canvas, optAttribs, onError) {
  *     from. If one is not passed in one will be created.
  * @return {!WebGLContext} The created context.
  */
-export function create3DContext(canvas, optAttribs) {
-    let names = ['webgl', 'experimental-webgl'];
+export function create3DContext(canvas, optAttribs, webglVersion) {
+    let names = webglVersion === 2 ? ['webgl2'] : ['webgl', 'experimental-webgl'];
     let context = null;
     for (var ii = 0; ii < names.length; ++ii) {
         try {

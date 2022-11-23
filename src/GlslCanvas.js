@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import xhr from 'xhr';
 import { createProgram, createShader, parseUniforms, setupWebGL } from './gl/gl';
 import Texture from './gl/Texture';
+import getDefaultShaderStrings from './tools/getDefaultShaderStrings';
 import { isCanvasVisible, isDiff, getFile } from './tools/common';
 import { subscribeMixin } from './tools/mixin';
 
@@ -31,8 +32,27 @@ export default class GlslCanvas {
     constructor(canvas, contextOptions, options) {
         subscribeMixin(this);
 
-        contextOptions = contextOptions || {};
-        options = options || {};
+        contextOptions = Object.assign({}, contextOptions);
+        options = Object.assign({}, options);
+
+        ['vertexString', 'backgroundColor', 'fragmentString'].forEach((property) => {
+            if (property in contextOptions) {
+                console.warn(`Property ${property} should be used in options - not in contextOptions`);
+                options[property] = contextOptions[property];
+            }
+        });
+
+        if (canvas.hasAttribute('data-webgl')) {
+            options.webglVersion = parseInt(canvas.getAttribute('data-webgl'), 10);
+        } else {
+            options.webglVersion = options.webglVersion || 1;
+        }
+
+        if (canvas.hasAttribute('data-glsl')) {
+            options.glslVersion = parseInt(canvas.getAttribute('data-glsl'), 10);
+        } else {
+            options.glslVersion = options.glslVersion || (options.webglVersion === 2 ? 300 : 100);
+        }
 
         if (canvas.hasAttribute('data-fullscreen') &&
             (canvas.getAttribute('data-fullscreen') == "1" ||
@@ -47,6 +67,8 @@ export default class GlslCanvas {
             this.height = canvas.clientHeight;
         }
 
+        this.webglVersion = options.webglVersion === 2 ? 2 : 1;
+        this.glslVersion = options.glslVersion === 300 ? 300 : 100;
         this.canvas = canvas;
         this.gl = undefined;
         this.deps = {};
@@ -61,35 +83,13 @@ export default class GlslCanvas {
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
 
-        this.vertexString = contextOptions.vertexString || `
-#ifdef GL_ES
-precision mediump float;
-#endif
+        this.defaultShaderStrings = getDefaultShaderStrings(this.glslVersion);
 
-attribute vec2 a_position;
-attribute vec2 a_texcoord;
-
-varying vec2 v_texcoord;
-
-void main() {
-    gl_Position = vec4(a_position, 0.0, 1.0);
-    v_texcoord = a_texcoord;
-}
-`;
-        this.fragmentString = contextOptions.fragmentString || `
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-varying vec2 v_texcoord;
-
-void main(){
-    gl_FragColor = vec4(0.0);
-}
-`;
+        this.vertexString = options.vertexString || this.defaultShaderStrings.vertexString;
+        this.fragmentString = options.fragmentString || this.defaultShaderStrings.fragmentString;
 
         // GL Context
-        let gl = setupWebGL(canvas, contextOptions, options.onError);
+        let gl = setupWebGL(canvas, contextOptions, options);
         if (!gl) {
             return;
         }
@@ -101,7 +101,7 @@ void main(){
         this.realToCSSPixels = window.devicePixelRatio || 1;
 
         // Allow alpha
-        canvas.style.backgroundColor = contextOptions.backgroundColor || 'rgba(1,1,1,0)';
+        canvas.style.backgroundColor = options.backgroundColor || 'rgba(1,1,1,0)';
 
         // Load shader
         if (canvas.hasAttribute('data-fragment')) {
@@ -173,7 +173,7 @@ void main(){
             if (sandbox.resize()) {
                 sandbox.forceRender = true;
             }
-            
+
             sandbox.render();
             sandbox.animationFrameRequest = window.requestAnimationFrame(RenderLoop);
         }
@@ -275,7 +275,7 @@ void main(){
 
         // If Fragment shader fails load a empty one to sign the error
         if (!fragmentShader) {
-            fragmentShader = createShader(this, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', this.gl.FRAGMENT_SHADER);
+            fragmentShader = createShader(this, this.defaultShaderStrings.fragmentString, this.gl.FRAGMENT_SHADER);
             this.isValid = false;
         }
         else {
@@ -302,7 +302,7 @@ void main(){
         }
         this.buffers = buffers;
         this.texureIndex = this.BUFFER_COUNT;
-        
+
         // Trigger event
         this.trigger('load', {});
 
@@ -316,10 +316,13 @@ void main(){
         let pre_test_vert = this.vertexString;
         let pre_test_frag = this.fragmentString;
         let pre_test_paused = this.paused;
-
-        let ext = this.gl.getExtension('EXT_disjoint_timer_query');
-        let query = ext.createQueryEXT();
         let wasValid = this.isValid;
+        let ext = this.webglVersion === 2
+            ? this.gl.getExtension('EXT_disjoint_timer_query_webgl2')
+            : this.gl.getExtension('EXT_disjoint_timer_query');
+        let query = this.webglVersion === 2
+            ? this.gl.createQuery()
+            : ext.createQueryEXT();
 
         if (fragString || vertString) {
             this.load(fragString, vertString);
@@ -329,30 +332,37 @@ void main(){
         }
 
         this.paused = true;
-        ext.beginQueryEXT(ext.TIME_ELAPSED_EXT, query);
+        this.webglVersion === 2
+            ? this.gl.beginQuery(ext.TIME_ELAPSED_EXT, query)
+            : ext.beginQueryEXT(ext.TIME_ELAPSED_EXT, query);
         this.forceRender = true;
         this.render();
-        ext.endQueryEXT(ext.TIME_ELAPSED_EXT);
+        this.webglVersion === 2
+            ? this.gl.endQuery(ext.TIME_ELAPSED_EXT)
+            : ext.endQueryEXT(ext.TIME_ELAPSED_EXT);
 
-        let sandbox = this;
-        function finishTest() {
+        const finishTest = () => {
             // Revert changes... go back to normal
-            sandbox.paused = pre_test_paused;
+            this.paused = pre_test_paused;
             if (fragString || vertString) {
-                sandbox.load(pre_test_frag, pre_test_vert);
+                this.load(pre_test_frag, pre_test_vert);
             }
         }
-        function waitForTest() {
-            sandbox.forceRender = true;
-            sandbox.render();
-            let available = ext.getQueryObjectEXT(query, ext.QUERY_RESULT_AVAILABLE_EXT);
-            let disjoint = sandbox.gl.getParameter(ext.GPU_DISJOINT_EXT);
+        const waitForTest = () => {
+            this.forceRender = true;
+            this.render();
+            let available = this.webglVersion === 2
+                ? this.gl.getQueryParameter(query, this.gl.QUERY_RESULT_AVAILABLE)
+                : ext.getQueryObjectEXT(query, ext.QUERY_RESULT_AVAILABLE_EXT);
+            let disjoint = this.gl.getParameter(ext.GPU_DISJOINT_EXT);
             if (available && !disjoint) {
                 let ret = {
                     wasValid: wasValid,
-                    frag: fragString || sandbox.fragmentString,
-                    vert: vertString || sandbox.vertexString,
-                    timeElapsedMs: ext.getQueryObjectEXT(query, ext.QUERY_RESULT_EXT)/1000000.0
+                    frag: fragString || this.fragmentString,
+                    vert: vertString || this.vertexString,
+                    timeElapsedMs: this.webglVersion === 2
+                        ? this.gl.getQueryParameter(query, this.gl.QUERY_RESULT)/1000000.0
+                        : ext.getQueryObjectEXT(query, ext.QUERY_RESULT_EXT)/1000000.0,
                 };
                 finishTest();
                 callback(ret);
@@ -439,7 +449,7 @@ void main(){
 
     // ex: program.uniform('3f', 'position', x, y, z);
     uniform (method, type, name, ...value) { // 'value' is a method-appropriate arguments list
-        this.uniforms[name] = this.uniforms[name] || {}; 
+        this.uniforms[name] = this.uniforms[name] || {};
         let uniform = this.uniforms[name];
         let change = isDiff(uniform.value, value);
 
@@ -608,7 +618,7 @@ void main(){
             const buffer = buffers[key];
             let fragment = createShader(glsl, buffer.fragment, gl.FRAGMENT_SHADER, 1);
             if (!fragment) {
-                fragment = createShader(glsl, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', gl.FRAGMENT_SHADER);
+                fragment = createShader(glsl, this.defaultShaderStrings.fragmentString, gl.FRAGMENT_SHADER);
                 glsl.isValid = false;
             } else {
                 glsl.isValid = true;
@@ -655,11 +665,13 @@ void main(){
     }
 
     // create a buffers
-    createBuffer(W, H, program) {
+    createBuffer(W, H) {
         const gl = this.gl;
         let index = this.BUFFER_COUNT;
         this.BUFFER_COUNT += 2;
-        gl.getExtension('OES_texture_float');
+        if (this.webglVersion === 1) {
+            gl.getExtension('OES_texture_float');
+        }
         var texture = gl.createTexture();
         gl.activeTexture(gl.TEXTURE0 + index);
         gl.bindTexture(gl.TEXTURE_2D, texture);

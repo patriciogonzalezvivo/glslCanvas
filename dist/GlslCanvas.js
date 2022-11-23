@@ -591,7 +591,7 @@ var ERROR_OTHER = 2;
  *     creation attributes you want to pass in.
  * @return {WebGLRenderingContext} The created context.
  */
-function setupWebGL(canvas, optAttribs, onError) {
+function setupWebGL(canvas, optAttribs, options) {
     function showLink(str) {
         var container = canvas.parentNode;
         if (container) {
@@ -600,22 +600,22 @@ function setupWebGL(canvas, optAttribs, onError) {
     }
 
     function handleError(errorCode, msg) {
-        if (typeof onError === 'function') {
-            onError(errorCode);
+        if (typeof options.onError === 'function') {
+            options.onError(errorCode);
         } else {
             showLink(msg);
         }
     }
 
-    if (!window.WebGLRenderingContext) {
+    if (options.webglVersion === 2 ? !window.WebGL2RenderingContext : !window.WebGLRenderingContext) {
         handleError(ERROR_BROWSER_SUPPORT, GET_A_WEBGL_BROWSER);
         return null;
     }
 
-    var context = create3DContext(canvas, optAttribs);
+    var context = create3DContext(canvas, optAttribs, options.webglVersion);
     if (!context) {
         handleError(ERROR_OTHER, OTHER_PROBLEM);
-    } else {
+    } else if (options.webglVersion === 1) {
         context.getExtension('OES_standard_derivatives');
     }
     return context;
@@ -627,8 +627,8 @@ function setupWebGL(canvas, optAttribs, onError) {
  *     from. If one is not passed in one will be created.
  * @return {!WebGLContext} The created context.
  */
-function create3DContext(canvas, optAttribs) {
-    var names = ['webgl', 'experimental-webgl'];
+function create3DContext(canvas, optAttribs, webglVersion) {
+    var names = webglVersion === 2 ? ['webgl2'] : ['webgl', 'experimental-webgl'];
     var context = null;
     for (var ii = 0; ii < names.length; ++ii) {
         try {
@@ -1307,6 +1307,24 @@ Texture.getMaxTextureSize = function (gl) {
 // Global set of textures, by name
 Texture.activeUnit = -1;
 
+var vertexString100 = "\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nattribute vec2 a_position;\nattribute vec2 a_texcoord;\n\nvarying vec2 v_texcoord;\n\nvoid main() {\n    gl_Position = vec4(a_position, 0.0, 1.0);\n    v_texcoord = a_texcoord;\n}\n";
+
+var fragmentString100 = "\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nvarying vec2 v_texcoord;\n\nvoid main(){\n    gl_FragColor = vec4(0.0);\n}\n";
+
+var vertexString300 = "#version 300 es\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nin vec2 a_position;\nin vec2 a_texcoord;\n\nout vec2 v_texcoord;\n\nvoid main() {\n    gl_Position = vec4(a_position, 0.0, 1.0);\n    v_texcoord = a_texcoord;\n}\n";
+
+var fragmentString300 = "#version 300 es\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nin vec2 v_texcoord;\nout vec4 frag_color;\n\nvoid main(){\n    frag_color = vec4(0.0);\n}\n";
+
+function getDefaultShaderStrings(glslVersion) {
+    return glslVersion === 300 ? {
+        fragmentString: fragmentString300,
+        vertexString: vertexString300
+    } : {
+        fragmentString: fragmentString100,
+        vertexString: vertexString100
+    };
+}
+
 /*
 The MIT License (MIT)
 
@@ -1338,8 +1356,27 @@ var GlslCanvas = function () {
 
         subscribeMixin$1(this);
 
-        contextOptions = contextOptions || {};
-        options = options || {};
+        contextOptions = Object.assign({}, contextOptions);
+        options = Object.assign({}, options);
+
+        ['vertexString', 'backgroundColor', 'fragmentString'].forEach(function (property) {
+            if (property in contextOptions) {
+                console.warn('Property ' + property + ' should be used in options - not in contextOptions');
+                options[property] = contextOptions[property];
+            }
+        });
+
+        if (canvas.hasAttribute('data-webgl')) {
+            options.webglVersion = parseInt(canvas.getAttribute('data-webgl'), 10);
+        } else {
+            options.webglVersion = options.webglVersion || 1;
+        }
+
+        if (canvas.hasAttribute('data-glsl')) {
+            options.glslVersion = parseInt(canvas.getAttribute('data-glsl'), 10);
+        } else {
+            options.glslVersion = options.glslVersion || (options.webglVersion === 2 ? 300 : 100);
+        }
 
         if (canvas.hasAttribute('data-fullscreen') && (canvas.getAttribute('data-fullscreen') == "1" || canvas.getAttribute('data-fullscreen') == "true")) {
             this.width = window.innerWidth;
@@ -1351,6 +1388,8 @@ var GlslCanvas = function () {
             this.height = canvas.clientHeight;
         }
 
+        this.webglVersion = options.webglVersion === 2 ? 2 : 1;
+        this.glslVersion = options.glslVersion === 300 ? 300 : 100;
         this.canvas = canvas;
         this.gl = undefined;
         this.deps = {};
@@ -1365,11 +1404,13 @@ var GlslCanvas = function () {
         this.BUFFER_COUNT = 0;
         // this.TEXTURE_COUNT = 0;
 
-        this.vertexString = contextOptions.vertexString || '\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nattribute vec2 a_position;\nattribute vec2 a_texcoord;\n\nvarying vec2 v_texcoord;\n\nvoid main() {\n    gl_Position = vec4(a_position, 0.0, 1.0);\n    v_texcoord = a_texcoord;\n}\n';
-        this.fragmentString = contextOptions.fragmentString || '\n#ifdef GL_ES\nprecision mediump float;\n#endif\n\nvarying vec2 v_texcoord;\n\nvoid main(){\n    gl_FragColor = vec4(0.0);\n}\n';
+        this.defaultShaderStrings = getDefaultShaderStrings(this.glslVersion);
+
+        this.vertexString = options.vertexString || this.defaultShaderStrings.vertexString;
+        this.fragmentString = options.fragmentString || this.defaultShaderStrings.fragmentString;
 
         // GL Context
-        var gl = setupWebGL(canvas, contextOptions, options.onError);
+        var gl = setupWebGL(canvas, contextOptions, options);
         if (!gl) {
             return;
         }
@@ -1381,7 +1422,7 @@ var GlslCanvas = function () {
         this.realToCSSPixels = window.devicePixelRatio || 1;
 
         // Allow alpha
-        canvas.style.backgroundColor = contextOptions.backgroundColor || 'rgba(1,1,1,0)';
+        canvas.style.backgroundColor = options.backgroundColor || 'rgba(1,1,1,0)';
 
         // Load shader
         if (canvas.hasAttribute('data-fragment')) {
@@ -1553,7 +1594,7 @@ var GlslCanvas = function () {
 
             // If Fragment shader fails load a empty one to sign the error
             if (!fragmentShader) {
-                fragmentShader = createShader(this, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', this.gl.FRAGMENT_SHADER);
+                fragmentShader = createShader(this, this.defaultShaderStrings.fragmentString, this.gl.FRAGMENT_SHADER);
                 this.isValid = false;
             } else {
                 this.isValid = true;
@@ -1589,15 +1630,16 @@ var GlslCanvas = function () {
     }, {
         key: 'test',
         value: function test(callback, fragString, vertString) {
+            var _this2 = this;
+
             // Thanks to @thespite for the help here
             // https://www.khronos.org/registry/webgl/extensions/EXT_disjoint_timer_query/
             var pre_test_vert = this.vertexString;
             var pre_test_frag = this.fragmentString;
             var pre_test_paused = this.paused;
-
-            var ext = this.gl.getExtension('EXT_disjoint_timer_query');
-            var query = ext.createQueryEXT();
             var wasValid = this.isValid;
+            var ext = this.webglVersion === 2 ? this.gl.getExtension('EXT_disjoint_timer_query_webgl2') : this.gl.getExtension('EXT_disjoint_timer_query');
+            var query = this.webglVersion === 2 ? this.gl.createQuery() : ext.createQueryEXT();
 
             if (fragString || vertString) {
                 this.load(fragString, vertString);
@@ -1607,37 +1649,36 @@ var GlslCanvas = function () {
             }
 
             this.paused = true;
-            ext.beginQueryEXT(ext.TIME_ELAPSED_EXT, query);
+            this.webglVersion === 2 ? this.gl.beginQuery(ext.TIME_ELAPSED_EXT, query) : ext.beginQueryEXT(ext.TIME_ELAPSED_EXT, query);
             this.forceRender = true;
             this.render();
-            ext.endQueryEXT(ext.TIME_ELAPSED_EXT);
+            this.webglVersion === 2 ? this.gl.endQuery(ext.TIME_ELAPSED_EXT) : ext.endQueryEXT(ext.TIME_ELAPSED_EXT);
 
-            var sandbox = this;
-            function finishTest() {
+            var finishTest = function finishTest() {
                 // Revert changes... go back to normal
-                sandbox.paused = pre_test_paused;
+                _this2.paused = pre_test_paused;
                 if (fragString || vertString) {
-                    sandbox.load(pre_test_frag, pre_test_vert);
+                    _this2.load(pre_test_frag, pre_test_vert);
                 }
-            }
-            function waitForTest() {
-                sandbox.forceRender = true;
-                sandbox.render();
-                var available = ext.getQueryObjectEXT(query, ext.QUERY_RESULT_AVAILABLE_EXT);
-                var disjoint = sandbox.gl.getParameter(ext.GPU_DISJOINT_EXT);
+            };
+            var waitForTest = function waitForTest() {
+                _this2.forceRender = true;
+                _this2.render();
+                var available = _this2.webglVersion === 2 ? _this2.gl.getQueryParameter(query, _this2.gl.QUERY_RESULT_AVAILABLE) : ext.getQueryObjectEXT(query, ext.QUERY_RESULT_AVAILABLE_EXT);
+                var disjoint = _this2.gl.getParameter(ext.GPU_DISJOINT_EXT);
                 if (available && !disjoint) {
                     var ret = {
                         wasValid: wasValid,
-                        frag: fragString || sandbox.fragmentString,
-                        vert: vertString || sandbox.vertexString,
-                        timeElapsedMs: ext.getQueryObjectEXT(query, ext.QUERY_RESULT_EXT) / 1000000.0
+                        frag: fragString || _this2.fragmentString,
+                        vert: vertString || _this2.vertexString,
+                        timeElapsedMs: _this2.webglVersion === 2 ? _this2.gl.getQueryParameter(query, _this2.gl.QUERY_RESULT) / 1000000.0 : ext.getQueryObjectEXT(query, ext.QUERY_RESULT_EXT) / 1000000.0
                     };
                     finishTest();
                     callback(ret);
                 } else {
                     window.requestAnimationFrame(waitForTest);
                 }
-            }
+            };
             waitForTest();
         }
     }, {
@@ -1910,7 +1951,7 @@ var GlslCanvas = function () {
                 var buffer = buffers[key];
                 var fragment = createShader(glsl, buffer.fragment, gl.FRAGMENT_SHADER, 1);
                 if (!fragment) {
-                    fragment = createShader(glsl, 'void main(){\n\tgl_FragColor = vec4(1.0);\n}', gl.FRAGMENT_SHADER);
+                    fragment = createShader(glsl, this.defaultShaderStrings.fragmentString, gl.FRAGMENT_SHADER);
                     glsl.isValid = false;
                 } else {
                     glsl.isValid = true;
@@ -1963,11 +2004,13 @@ var GlslCanvas = function () {
 
     }, {
         key: 'createBuffer',
-        value: function createBuffer(W, H, program) {
+        value: function createBuffer(W, H) {
             var gl = this.gl;
             var index = this.BUFFER_COUNT;
             this.BUFFER_COUNT += 2;
-            gl.getExtension('OES_texture_float');
+            if (this.webglVersion === 1) {
+                gl.getExtension('OES_texture_float');
+            }
             var texture = gl.createTexture();
             gl.activeTexture(gl.TEXTURE0 + index);
             gl.bindTexture(gl.TEXTURE_2D, texture);

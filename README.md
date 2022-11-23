@@ -36,11 +36,13 @@ As you can see, in this example we are loading the fragment shader by setting th
 * ```data-vertex``` : load a vertex shader by providing the content of the shader as a string
 * ```data-vertex-url``` : load a vertex shader by providing a valid url
 * ```data-textures```: add a list of texture urls separated by commas (ex: ```data-textures="texture.jpg,normal_map.png,something.jpg"```). Textures will be assigned in order to ```uniform sampler2D``` variables with names following this style: ```u_tex0```, ```u_tex1```, ```u_tex2```, etc.
+* ```data-webgl``` : WebGL version (by default ```1```)
+* ```data-glsl``` : GLSL ES version (by default ```100``` for WebGL and ```300``` for WebGL2)
 
 All the cached ```.glslCanvas``` elements will be stored in the ```windows.glslCanvases``` array.
 
 ### The JS way
- 
+
 Create a ```<canvas>``` element and construct a ```glsCanvas()``` sandbox from it.
 
 ```javascript
@@ -78,13 +80,13 @@ You can also send your custom uniforms to a shader with ```.setUniform([name],[.
 ```javascript
 
 // Assign .5 to "uniform float u_brightness"
-sandbox.setUniform("u_brightness",.5); 
+sandbox.setUniform("u_brightness",.5);
 
 // Assign (.2,.3) to "uniform vec2 u_position"
 sandbox.setUniform("u_position",.2,.3);
 
 // Assign a red color to "uniform vec3 u_color"
-sandbox.setUniform("u_color",1,0,0); 
+sandbox.setUniform("u_color",1,0,0);
 
 // Load a new texture and assign it to "uniform sampler2D u_texture"
 sandbox.setUniform("u_texture","data/texture.jpg");
@@ -96,7 +98,7 @@ In the [```index.html```](https://github.com/patriciogonzalezvivo/glslCanvas/blo
 
 [Demo page: patriciogonzalezvivo.github.io/glslCanvas/](http://patriciogonzalezvivo.github.io/glslCanvas/)
 
-## Collaborate 
+## Collaborate
 
 If you'd like to contribute to this code, you need to:
 
